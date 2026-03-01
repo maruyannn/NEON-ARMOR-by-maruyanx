@@ -15,9 +15,24 @@
             font-family: 'Courier New', Courier, monospace; overflow: hidden;
             display: flex; justify-content: center; align-items: center; user-select: none;
         }
-        #appWrapper { display: flex; gap: 20px; }
-        #gameContainer { position: relative; width: 1024px; height: 768px; box-shadow: 0 0 20px rgba(0, 255, 204, 0.2); background: #000; }
-        canvas { display: block; width: 100%; height: 100%; }
+        #appWrapper {
+    display: flex;
+    gap: 20px;
+}
+
+@media (max-width: 900px) {
+    #appWrapper {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    #leaderboardPanel {
+        width: 90%;
+        height: auto;
+        max-height: 300px;
+    }
+}
+        canvas { display: block; width: 100%; height: 100%; object-fit: contain;}
         
         #leaderboardPanel { width: 250px; height: 768px; background: #111; border: 2px solid var(--accent-color); padding: 20px; box-sizing: border-box; overflow-y: auto; border-radius: 8px; }
         #leaderboardPanel h2 { color: var(--accent-color); text-align: center; font-size: 1.2em; margin-top: 0; }
@@ -61,10 +76,12 @@
 
 #joystickBase {
     position: absolute;
-    left: 40px;
-    bottom: 40px;
-    width: 120px;
-    height: 120px;
+    left: 5%;
+    bottom: 5%;
+    width: 25vw;
+    height: 25vw;
+    max-width: 140px;
+    max-height: 140px;
     background: rgba(0,255,204,0.15);
     border: 2px solid #00ffcc;
     border-radius: 50%;
@@ -73,21 +90,23 @@
 
 #joystickStick {
     position: absolute;
-    left: 35px;
-    top: 35px;
-    width: 50px;
-    height: 50px;
+    width: 40%;
+    height: 40%;
     background: #00ffcc;
     border-radius: 50%;
+    left: 30%;
+    top: 30%;
 }
 
 #mobileShoot {
     position: absolute;
-    right: 60px;
-    bottom: 60px;
-    width: 80px;
-    height: 80px;
-    font-size: 30px;
+    right: 8%;
+    bottom: 10%;
+    width: 20vw;
+    height: 20vw;
+    max-width: 110px;
+    max-height: 110px;
+    font-size: 28px;
     border-radius: 50%;
     background: #ff0055;
     color: white;
@@ -96,11 +115,10 @@
 
 #mobilePause {
     position: absolute;
-    right: 20px;
-    top: 20px;
-    width: 60px;
-    height: 60px;
-    font-size: 18px;
+    right: 5%;
+    top: 5%;
+    width: 50px;
+    height: 50px;
     border-radius: 8px;
     background: #444;
     color: white;
@@ -882,8 +900,9 @@ class Portal {
 class Game {
     constructor() {
         this.isMobile = 'ontouchstart' in window;
-if(this.isMobile){
-    document.getElementById('mobileControls').style.display = 'block';
+        this.mobileControls = document.getElementById('mobileControls');
+        if(this.isMobile){
+        this.mobileControls.style.display = 'none';
 }
         this.canvas = document.getElementById('gameCanvas'); this.ctx = this.canvas.getContext('2d');
         this.input = { keys: {}, mouse: { x: 0, y: 0, down: false } }; this.prevKeys = {};
@@ -926,8 +945,10 @@ if(this.isMobile){
         const moveX = Math.cos(angle) * dist;
         const moveY = Math.sin(angle) * dist;
 
-        stick.style.left = 35 + moveX + 'px';
-        stick.style.top = 35 + moveY + 'px';
+        const baseRect = base.getBoundingClientRect();
+        const center = baseRect.width / 2;
+        stick.style.left = center - (baseRect.width * 0.2) + moveX + 'px';
+        stick.style.top = center - (baseRect.height * 0.2) + moveY + 'px';
 
         this.input.keys['KeyW'] = moveY < -10;
         this.input.keys['KeyS'] = moveY > 10;
@@ -937,8 +958,8 @@ if(this.isMobile){
 
     base.addEventListener('touchend', ()=>{
         joystickActive = false;
-        stick.style.left = '35px';
-        stick.style.top = '35px';
+        stick.style.left = '30%';
+        stick.style.top = '30%';
         this.input.keys['KeyW'] = false;
         this.input.keys['KeyS'] = false;
         this.input.keys['KeyA'] = false;
@@ -1038,6 +1059,9 @@ if(this.isMobile){
         this.setUIState(null); this.state = 'PLAYING'; audioSys.stopBGM();
         if(this.mode === 'STORY') this.loadLevel();
         else { this.level = new Level(0, true); this.player.x = this.level.getSpawnPoint().x; this.player.y = this.level.getSpawnPoint().y; }
+        if(this.isMobile){
+        this.mobileControls.style.display = 'block';
+}
     }
 
     loadLevel() {
@@ -1115,6 +1139,9 @@ if(this.isMobile){
         if (isWin) { u.wins++; document.getElementById('vicScore').innerText = this.score; document.getElementById('vicCoins').innerText = this.runCoins; this.setUIState('victoryScreen'); } 
         else { u.deaths++; document.getElementById('goContext').innerText = `Modo: ${this.mode} | ${this.mode==='STORY' ? 'Nivel: '+(this.levelIndex+1) : 'Oleada: '+(this.wave-1)}`; document.getElementById('goScore').innerText = this.score; document.getElementById('goCoins').innerText = this.runCoins; this.setUIState('gameOverScreen'); }
         if(this.mode === 'STORY') checkHighscore(currentUser, this.score);
+        if(this.isMobile){
+        this.mobileControls.style.display = 'none';
+}
         saveDB(); audioSys.startBGM('menu');
     }
 
