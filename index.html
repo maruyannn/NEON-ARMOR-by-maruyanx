@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>NEON ARMOR - COMPLETE EDITION</title>
+    <title>NEON ARMOR</title>
     <style>
         :root {
             --bg-color: #0d0d12; --accent-color: #00ffcc; --danger-color: #ff0055;
@@ -424,18 +424,10 @@ class Level {
             }
         }
     }
-    buildFlowField(px, py, props = []) {
+    buildFlowField(px, py) {
         let tC = Math.floor(px/this.tileSize), tR = Math.floor(py/this.tileSize);
         for (let r = 0; r < this.rows; r++) { this.flowField[r] = []; for (let c = 0; c < this.cols; c++) this.flowField[r][c] = 9999; }
         if (tR < 0 || tR >= this.rows || tC < 0 || tC >= this.cols) return;
-        
-        let blocked = Array(this.rows).fill(0).map(() => Array(this.cols).fill(false));
-        props.forEach(p => { 
-            if(p.active && p.type !== 'trap') {
-                let pr = Math.floor(p.y/this.tileSize), pc = Math.floor(p.x/this.tileSize);
-                if(pr >= 0 && pr < this.rows && pc >= 0 && pc < this.cols) blocked[pr][pc] = true; 
-            }
-        });
         
         let q = [{r: tR, c: tC}]; this.flowField[tR][tC] = 0;
         let dirs = [[-1,0], [1,0], [0,-1], [0,1], [-1,-1], [1,-1], [-1,1], [1,1]];
@@ -444,7 +436,7 @@ class Level {
             let curr = q[head++];
             for (let d of dirs) {
                 let nr = curr.r + d[0], nc = curr.c + d[1];
-                if (nr >= 0 && nr < this.rows && nc >= 0 && nc < this.cols && this.grid[nr][nc] === 0 && !blocked[nr][nc]) {
+                if (nr >= 0 && nr < this.rows && nc >= 0 && nc < this.cols && this.grid[nr][nc] === 0) {
                     let step = (d[0] !== 0 && d[1] !== 0) ? 1.414 : 1;
                     if (this.flowField[nr][nc] > this.flowField[curr.r][curr.c] + step) {
                         this.flowField[nr][nc] = this.flowField[curr.r][curr.c] + step;
@@ -764,6 +756,10 @@ class Enemy {
         this.speed = conf.speed * (1 + (scale-1)*0.1); this.damage = Math.floor(conf.damage * scale); 
         this.color = conf.color; this.eType = conf.type;
         this.flashTimer = 0; this.actionTimer = 0;
+
+        this.aggro = (type === 'boss');
+        this.wanderAngle = Math.random() * Math.PI * 2;
+        this.wanderTimer = 0;
         
         if(this.eType === 'ranged' || this.eType === 'boss') this.weapon = new Weapon({ damage: this.damage, fireRate: 2000, speed: 300, spread: 0.1, color: '#ffaa00', explosive: true, radius: 40, magSize: 999 });
         if(this.type === 'boss') { 
@@ -777,10 +773,25 @@ class Enemy {
         for (let i = 0; i < steps; i++) { if (level.checkCollision(x0, y0, 1)) return false; x0 += dx; y0 += dy; }
         return true;
     }
+    wander(dt, level) {
+        this.wanderTimer -= dt;
+        if(this.wanderTimer <= 0) {
+            this.wanderAngle = Math.random() * Math.PI * 2;
+            this.wanderTimer = randRange(1, 3);
+        }
+        let dx = Math.cos(this.wanderAngle), dy = Math.sin(this.wanderAngle);
+        let nx = this.x + dx * (this.speed * 0.4) * dt, ny = this.y + dy * (this.speed * 0.4) * dt;
+        if (!level.checkCollision(nx, this.y, this.radius)) this.x = nx; else this.wanderAngle += Math.PI;
+        if (!level.checkCollision(this.x, ny, this.radius)) this.y = ny; else this.wanderAngle += Math.PI;
+    }
     update(dt, game, level) {
         if (this.flashTimer > 0) this.flashTimer -= dt;
         const player = game.player; const dist = distance(this.x, this.y, player.x, player.y);
         
+        if (!this.aggro && this.type !== 'boss') {
+            if (dist < 600 && this.checkLOS(player, level)) this.aggro = true;
+        }
+
         if (this.type === 'boss') {
             if(this.hp < this.maxHp/2 && !this.phase2) {
                 this.phase2 = true; this.speed *= 1.5; this.weapon.config.fireRate *= 0.6; this.color = '#ff0000';
@@ -795,7 +806,7 @@ class Enemy {
                         let ang = Math.random()*Math.PI*2;
                         let sx = this.x + Math.cos(ang)*40;
                         let sy = this.y + Math.sin(ang)*40;
-                        if(!level.checkCollision(sx, sy, 12)) {
+                        if(!level.checkCollision(sx, sy, 12) && !game.isPointOnProp(sx, sy, 12)) {
                             game.enemies.push(new Enemy('fast', sx, sy, this.maxHp/1000, true));
                             spawned = true;
                         }
@@ -828,29 +839,33 @@ class Enemy {
             } else if (this.bossState === 'FIRE') { this.bossAimTimer -= dt; if(this.bossAimTimer <= 0) this.bossState = 'MOVE'; }
         } else {
             this.actionTimer -= dt;
-            if (this.eType === 'ranged' && dist < 400 && dist > 100 && this.checkLOS(player, level)) this.weapon.fire(this.x, this.y, player.x, player.y, game, game.time, true);
-            else if (this.eType === 'summoner' && this.actionTimer <= 0 && dist < 600) {
-                let spawnRads = [0, Math.PI/2, Math.PI, Math.PI*1.5];
-                let spawned = false;
-                for(let a of spawnRads) {
-                    let sx = this.x + Math.cos(a)*30;
-                    let sy = this.y + Math.sin(a)*30;
-                    if(!level.checkCollision(sx, sy, 15)) {
-                        game.enemies.push(new Enemy('basic', sx, sy, 1, true));
-                        spawned = true; break;
+            if (!this.aggro) {
+                this.wander(dt, level);
+            } else {
+                if (this.eType === 'ranged' && dist < 400 && dist > 100 && this.checkLOS(player, level)) this.weapon.fire(this.x, this.y, player.x, player.y, game, game.time, true);
+                else if (this.eType === 'summoner' && this.actionTimer <= 0 && dist < 600) {
+                    let spawnRads = [0, Math.PI/2, Math.PI, Math.PI*1.5];
+                    let spawned = false;
+                    for(let a of spawnRads) {
+                        let sx = this.x + Math.cos(a)*30;
+                        let sy = this.y + Math.sin(a)*30;
+                        if(!level.checkCollision(sx, sy, 15) && !game.isPointOnProp(sx, sy, 15)) {
+                            game.enemies.push(new Enemy('basic', sx, sy, 1, true));
+                            spawned = true; break;
+                        }
                     }
-                }
-                if(spawned) { this.actionTimer = 5.0; game.spawnParticles(this.x, this.y, '#8800ff', 20); }
-                else this.actionTimer = 1.0; 
-            } else if (this.eType === 'healer' && this.actionTimer <= 0) {
-                let target = null, minHp = 9999;
-                game.enemies.forEach(e => { if(e !== this && e.hp < e.maxHp && e.hp < minHp) { target = e; minHp = e.hp; } });
-                if(target && distance(this.x, this.y, target.x, target.y) < 150) {
-                    target.hp = Math.min(target.maxHp, target.hp + 20); this.actionTimer = 3.0;
-                    game.spawnParticles(target.x, target.y, '#0f0', 10);
-                } else if(target) this.moveAI(dt, target, level, distance(this.x,this.y,target.x,target.y), game, true);
-                else this.moveAI(dt, player, level, dist, game);
-            } else this.moveAI(dt, player, level, dist, game);
+                    if(spawned) { this.actionTimer = 5.0; game.spawnParticles(this.x, this.y, '#8800ff', 20); }
+                    else this.actionTimer = 1.0; 
+                } else if (this.eType === 'healer' && this.actionTimer <= 0) {
+                    let target = null, minHp = 9999;
+                    game.enemies.forEach(e => { if(e !== this && e.hp < e.maxHp && e.hp < minHp) { target = e; minHp = e.hp; } });
+                    if(target && distance(this.x, this.y, target.x, target.y) < 150) {
+                        target.hp = Math.min(target.maxHp, target.hp + 20); this.actionTimer = 3.0;
+                        game.spawnParticles(target.x, target.y, '#0f0', 10);
+                    } else if(target) this.moveAI(dt, target, level, distance(this.x,this.y,target.x,target.y), game, true);
+                    else this.moveAI(dt, player, level, dist, game);
+                } else this.moveAI(dt, player, level, dist, game);
+            }
         }
     }
     moveAI(dt, target, level, dist, game, isAlly=false) {
@@ -885,15 +900,12 @@ class Enemy {
         if(count > 0) { dx += (sepX/count)*1.5; dy += (sepY/count)*1.5; let len = Math.hypot(dx,dy); dx/=len; dy/=len; }
 
         let nx = this.x + dx * this.speed * dt, ny = this.y + dy * this.speed * dt;
-        if (!level.checkCollision(nx, this.y, this.radius) && !this.checkPropCollision(nx, this.y, game.props)) this.x = nx;
-        if (!level.checkCollision(this.x, ny, this.radius) && !this.checkPropCollision(this.x, ny, game.props)) this.y = ny;
-    }
-    checkPropCollision(x, y, props) {
-        for(let p of props) if(p.active && p.type !== 'trap' && distance(x, y, p.x, p.y) < this.radius + p.radius) return true;
-        return false;
+        if (!level.checkCollision(nx, this.y, this.radius)) this.x = nx;
+        if (!level.checkCollision(this.x, ny, this.radius)) this.y = ny;
     }
     takeDamage(amount, game, fromPlayer=true) {
         let dmg = amount;
+        this.aggro = true;
         if(this.eType === 'shielded') {
             let px = game.player.x, py = game.player.y;
             let angleToPlayer = Math.atan2(py - this.y, px - this.x);
@@ -1203,6 +1215,13 @@ class Game {
         else { this.level = new Level(0, true); this.player.x = this.level.getSpawnPoint().x; this.player.y = this.level.getSpawnPoint().y; }
     }
 
+    isPointOnProp(x, y, radius) {
+        for(let p of this.props) {
+            if (distance(x, y, p.x, p.y) < radius + p.radius) return true;
+        }
+        return false;
+    }
+
     loadLevel() {
         this.bullets.forEach(b => this.pools.bullet.release(b)); this.particles.forEach(p => this.pools.particle.release(p));
         this.bullets = []; this.enemies = []; this.props = []; this.items = []; this.explosions = []; this.portal = null;
@@ -1216,12 +1235,15 @@ class Game {
             this.props.push(new Prop(type, p.x, p.y));
         }
 
-        this.level.buildFlowField(this.player.x, this.player.y, this.props);
+        this.level.buildFlowField(this.player.x, this.player.y);
         this.lastFlowX = this.player.x; this.lastFlowY = this.player.y;
         
         const numEnemies = 5 + this.levelIndex * 3, scale = 1 + this.levelIndex * 0.2;
         for (let i = 0; i < numEnemies; i++) {
-            let p = this.level.getRandomFloorPoint(); while (distance(p.x, p.y, this.player.x, this.player.y) < 300) p = this.level.getRandomFloorPoint();
+            let p;
+            do { p = this.level.getRandomFloorPoint(); } 
+            while (distance(p.x, p.y, this.player.x, this.player.y) < 300 || this.isPointOnProp(p.x, p.y, 20));
+
             let type = 'basic', r = Math.random();
             if (this.levelIndex > 1 && r < 0.2) type = 'fast'; else if (this.levelIndex > 2 && r < 0.3) type = 'tank'; else if (this.levelIndex > 3 && r < 0.4) type = 'summoner'; else if (this.levelIndex > 4 && r < 0.5) type = 'healer'; else if (this.levelIndex > 4 && r < 0.6) type = 'shielded';
             this.enemies.push(new Enemy(type, p.x, p.y, scale));
@@ -1264,12 +1286,12 @@ class Game {
     spawnSurvivalWave() {
         this.waveTimer = 5; const scale = 1 + this.wave * 0.15;
         if (this.wave % 10 === 0) {
-            let p = this.level.getRandomFloorPoint(); while (distance(p.x, p.y, this.player.x, this.player.y) < 400) p = this.level.getRandomFloorPoint();
+            let p; do { p = this.level.getRandomFloorPoint(); } while (distance(p.x, p.y, this.player.x, this.player.y) < 400 || this.isPointOnProp(p.x, p.y, 30));
             this.enemies.push(new Enemy('boss', p.x, p.y, scale)); audioSys.sfxBossSpawn();
         } else {
             const numEnemies = 5 + this.wave * 2;
             for (let i = 0; i < numEnemies; i++) {
-                let p = this.level.getRandomFloorPoint(); while (distance(p.x, p.y, this.player.x, this.player.y) < 400) p = this.level.getRandomFloorPoint();
+                let p; do { p = this.level.getRandomFloorPoint(); } while (distance(p.x, p.y, this.player.x, this.player.y) < 400 || this.isPointOnProp(p.x, p.y, 20));
                 let type = 'basic', r = Math.random();
                 if (this.wave > 2 && r < 0.2) type = 'fast'; else if (this.wave > 4 && r < 0.3) type = 'tank'; else if (this.wave > 6 && r < 0.4) type = 'shielded';
                 this.enemies.push(new Enemy(type, p.x, p.y, scale));
@@ -1305,7 +1327,7 @@ class Game {
         if(this.flowTimer <= 0) { 
             let distMoved = distance(this.player.x, this.player.y, this.lastFlowX || 0, this.lastFlowY || 0);
             if (distMoved > 40 || !this.lastFlowX) {
-                this.level.buildFlowField(this.player.x, this.player.y, this.props); 
+                this.level.buildFlowField(this.player.x, this.player.y); 
                 this.lastFlowX = this.player.x; this.lastFlowY = this.player.y;
             }
             this.flowTimer = 0.25; 
@@ -1354,7 +1376,7 @@ class Game {
 
         if (this.mode === 'STORY' && activeEnemies === 0) {
             if (this.levelIndex === this.targetLevels - 1 && !this.bossSpawned) {
-                this.bossSpawned = true; let p = this.level.getRandomFloorPoint(); while(distance(p.x, p.y, this.player.x, this.player.y) < 300) p = this.level.getRandomFloorPoint();
+                this.bossSpawned = true; let p; do { p = this.level.getRandomFloorPoint(); } while(distance(p.x, p.y, this.player.x, this.player.y) < 300 || this.isPointOnProp(p.x, p.y, 30));
                 this.enemies.push(new Enemy('boss', p.x, p.y, 1 + this.levelIndex * 0.2)); audioSys.sfxBossSpawn();
             } else if (!this.portal && (this.levelIndex < this.targetLevels - 1 || this.bossSpawned)) {
                 let px = this.player.x, py = this.player.y;
