@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>NEON ARMOR-by MARUYANX</title>
     <style>
         :root {
@@ -14,45 +14,59 @@
             background-color: var(--bg-color); color: var(--text-color);
             font-family: 'Courier New', Courier, monospace; overflow: hidden;
             display: flex; justify-content: center; align-items: center; user-select: none;
+            touch-action: none;
         }
         #appWrapper {
             display: flex;
             gap: 20px;
+            width: 100vw;
+            height: 100vh;
+            justify-content: center;
+            align-items: center;
         }
-
-        @media (max-width: 900px) {
-            #appWrapper {
-                flex-direction: column;
-                align-items: center;
-            }
-
-            #leaderboardPanel {
-                width: 90%;
-                height: auto;
-                max-height: 300px;
-            }
+        #gameContainer {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            max-width: 1024px;
+            max-height: 768px;
+            aspect-ratio: 1024 / 768;
         }
-        canvas { display: block; width: 100%; height: 100%; object-fit: contain;}
+        canvas { 
+            display: block; 
+            width: 100%; 
+            height: 100%; 
+        }
         
-        #leaderboardPanel { width: 250px; height: 768px; background: #111; border: 2px solid var(--accent-color); padding: 20px; box-sizing: border-box; overflow-y: auto; border-radius: 8px; }
+        #leaderboardPanel { width: 250px; height: 100%; max-height: 768px; background: #111; border: 2px solid var(--accent-color); padding: 20px; box-sizing: border-box; overflow-y: auto; border-radius: 8px; }
         #leaderboardPanel h2 { color: var(--accent-color); text-align: center; font-size: 1.2em; margin-top: 0; }
         .lb-entry { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #333; font-size: 0.9em; }
         .lb-entry span:nth-child(2) { color: var(--gold-color); }
 
+        @media (max-width: 1024px) {
+            #leaderboardPanel { display: none; }
+            #appWrapper { gap: 0; }
+        }
+
         #uiLayer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; display: flex; justify-content: center; align-items: center; z-index: 10; }
-        .screen { background: var(--ui-bg); padding: 30px; border: 2px solid var(--accent-color); border-radius: 8px; text-align: center; pointer-events: auto; box-shadow: 0 0 15px var(--accent-color); display: none; max-width: 800px; max-height: 90%; overflow-y: auto; }
+        .screen { background: var(--ui-bg); padding: 30px; border: 2px solid var(--accent-color); border-radius: 8px; text-align: center; pointer-events: auto; box-shadow: 0 0 15px var(--accent-color); display: none; max-width: 90%; max-height: 90%; overflow-y: auto; }
         .screen.active { display: block; }
         h1 { margin-top: 0; color: var(--accent-color); text-shadow: 0 0 10px var(--accent-color); }
         h2 { color: var(--danger-color); }
         h3 { color: var(--gold-color); margin-bottom: 5px; }
         
-        input { padding: 10px; font-size: 1.2em; font-family: inherit; background: #000; border: 1px solid var(--accent-color); color: #fff; width: 80%; margin-bottom: 15px; text-align: center; }
+        input { padding: 10px; font-size: 1.2em; font-family: inherit; background: #000; border: 1px solid var(--accent-color); color: #fff; width: 80%; margin-bottom: 15px; text-align: center; box-sizing: border-box; }
         button { background: var(--accent-color); color: #000; border: none; padding: 12px 24px; font-size: 1em; font-weight: bold; cursor: pointer; border-radius: 4px; transition: 0.2s; font-family: inherit; margin: 5px; }
         button:hover { background: #fff; box-shadow: 0 0 15px #fff; }
         button.danger { background: var(--danger-color); color: #fff; }
 
         .menu-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
         .store-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-top: 20px; text-align: left; }
+        @media (max-width: 600px) {
+            .menu-grid { grid-template-columns: 1fr; }
+            .store-grid { grid-template-columns: 1fr 1fr; }
+        }
+        
         .weapon-card { border: 1px solid #555; padding: 15px; background: #111; position: relative; }
         .weapon-card.unlocked { border-color: var(--accent-color); cursor: pointer; }
         .weapon-card.selected { box-shadow: 0 0 15px var(--accent-color); background: #1a2a2a; }
@@ -61,10 +75,11 @@
         .weapon-card p { margin: 2px 0; font-size: 0.8em; color: #aaa; }
         
         .mutations-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-top: 20px; }
+        @media (max-width: 600px) { .mutations-grid { grid-template-columns: 1fr; } }
         .mutation-card { border: 1px solid var(--accent-color); padding: 20px; background: #111; cursor: pointer; transition: 0.2s; }
         .mutation-card:hover { background: #222; transform: scale(1.05); box-shadow: 0 0 15px var(--accent-color); }
 
-        .stats-bar { display: flex; justify-content: space-around; background: #222; padding: 10px; border-radius: 4px; margin-bottom: 20px; font-weight: bold; }
+        .stats-bar { display: flex; justify-content: space-around; background: #222; padding: 10px; border-radius: 4px; margin-bottom: 20px; font-weight: bold; flex-wrap: wrap; gap: 10px; }
         .stats-bar span { color: var(--accent-color); }
 
         #mobileControls {
@@ -105,34 +120,39 @@
         }
         #mobileShoot {
             position: absolute;
-            right: 8%;
-            bottom: 10%;
-            width: 20vw;
-            height: 20vw;
-            max-width: 110px;
-            max-height: 110px;
+            right: 5%;
+            bottom: 5%;
+            width: 20%;
+            height: auto;
+            aspect-ratio: 1/1;
+            max-width: 100px;
+            max-height: 100px;
             font-size: 28px;
             border-radius: 50%;
             background: #ff0055;
             color: white;
             pointer-events: auto;
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
         #mobilePause {
             position: absolute;
-            right: 5%;
-            top: 5%;
-            width: 50px;
-            height: 50px;
+            right: 2%;
+            top: 2%;
+            width: 40px;
+            height: 40px;
             border-radius: 8px;
             background: #444;
             color: white;
             pointer-events: auto;
+            padding: 0;
         }
     </style>
 </head>
 <body>
 <div id="appWrapper">
-    <div id="gameContainer" style="position: relative; width: 1024px; max-width: 100%;">
+    <div id="gameContainer">
         <canvas id="gameCanvas" width="1024" height="768"></canvas>
         <div id="mobileControls">
             <div id="leftTouchZone"></div>
@@ -250,6 +270,7 @@ function loadDB() {
 
 function updateLeaderboard() {
     const container = document.getElementById('lbContainer');
+    if(!container) return;
     container.innerHTML = '';
     let arr = Object.keys(db.users).map(k => ({ user: k, score: db.users[k].highScore || 0 })).filter(x => x.score > 0);
     arr.sort((a, b) => b.score - a.score).slice(0, 20).forEach((entry, i) => {
@@ -919,10 +940,10 @@ class Portal {
 
 class Game {
     constructor() {
-        this.isMobile = 'ontouchstart' in window;
+        this.isMobile = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
         this.mobileControls = document.getElementById('mobileControls');
         if(this.isMobile){
-            this.mobileControls.style.display = 'none';
+            this.mobileControls.style.display = 'block';
         }
         this.canvas = document.getElementById('gameCanvas'); this.ctx = this.canvas.getContext('2d');
         this.input = { keys: {}, mouse: { x: 0, y: 0, down: false } }; this.prevKeys = {};
@@ -930,7 +951,14 @@ class Game {
         
         window.addEventListener('keydown', e => { this.input.keys[e.code] = true; if(e.code === 'Escape') this.togglePause(); });
         window.addEventListener('keyup', e => { this.input.keys[e.code] = false; });
-        this.canvas.addEventListener('mousemove', e => { const r = this.canvas.getBoundingClientRect(); this.input.mouse.x = e.clientX - r.left; this.input.mouse.y = e.clientY - r.top; });
+        
+        this.canvas.addEventListener('mousemove', e => { 
+            const r = this.canvas.getBoundingClientRect(); 
+            const scaleX = this.canvas.width / r.width;
+            const scaleY = this.canvas.height / r.height;
+            this.input.mouse.x = (e.clientX - r.left) * scaleX; 
+            this.input.mouse.y = (e.clientY - r.top) * scaleY; 
+        });
         this.canvas.addEventListener('mousedown', () => this.input.mouse.down = true);
         this.canvas.addEventListener('mouseup', () => this.input.mouse.down = false);
 
@@ -956,8 +984,10 @@ class Game {
                         startX = t.clientX;
                         startY = t.clientY;
                         base.style.display = 'block';
-                        base.style.left = startX + 'px';
-                        base.style.top = startY + 'px';
+                        
+                        const rect = document.getElementById('gameContainer').getBoundingClientRect();
+                        base.style.left = (startX - rect.left) + 'px';
+                        base.style.top = (startY - rect.top) + 'px';
                         stick.style.transform = `translate(-50%, -50%)`;
                     }
                 }
@@ -1090,9 +1120,6 @@ class Game {
         this.setUIState(null); this.state = 'PLAYING'; audioSys.stopBGM();
         if(this.mode === 'STORY') this.loadLevel();
         else { this.level = new Level(0, true); this.player.x = this.level.getSpawnPoint().x; this.player.y = this.level.getSpawnPoint().y; }
-        if(this.isMobile){
-            this.mobileControls.style.display = 'block';
-        }
     }
 
     loadLevel() {
@@ -1171,9 +1198,6 @@ class Game {
         if (isWin) { u.wins++; document.getElementById('vicScore').innerText = this.score; document.getElementById('vicCoins').innerText = this.runCoins; this.setUIState('victoryScreen'); } 
         else { u.deaths++; document.getElementById('goContext').innerText = `Modo: ${this.mode} | ${this.mode==='STORY' ? 'Nivel: '+(this.levelIndex+1) : 'Oleada: '+(this.wave-1)}`; document.getElementById('goScore').innerText = this.score; document.getElementById('goCoins').innerText = this.runCoins; this.setUIState('gameOverScreen'); }
         if(this.mode === 'STORY') checkHighscore(currentUser, this.score);
-        if(this.isMobile){
-            this.mobileControls.style.display = 'none';
-        }
         saveDB(); audioSys.startBGM('menu');
     }
 
