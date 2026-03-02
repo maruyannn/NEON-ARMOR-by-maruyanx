@@ -2,222 +2,285 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>NEON ARMOR-by MARUYANX</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>NEON ARMOR-by MARUYANX (GameBoy Edition)</title>
     <style>
         :root {
             --bg-color: #0d0d12; --accent-color: #00ffcc; --danger-color: #ff0055;
             --gold-color: #ffd700; --text-color: #ffffff; --ui-bg: rgba(13, 13, 18, 0.95);
+            /* Colores carcasa tipo consola retro */
+            --console-bg: #2a2a35;
+            --console-border: #1a1a20;
         }
+        * { box-sizing: border-box; }
         body, html {
             margin: 0; padding: 0; width: 100%; height: 100%;
             background-color: var(--bg-color); color: var(--text-color);
             font-family: 'Courier New', Courier, monospace; overflow: hidden;
             display: flex; justify-content: center; align-items: center; user-select: none;
-            touch-action: none;
+            touch-action: none; /* Previene scroll y zoom nativo */
         }
+
         #appWrapper {
             display: flex;
-            gap: 20px;
             width: 100vw;
             height: 100vh;
             justify-content: center;
             align-items: center;
+            background: #000;
         }
+
+        /* --- Estilo Base (Escritorio / PC) --- */
         #gameContainer {
             position: relative;
-            width: 100%;
-            height: 100%;
-            max-width: 1024px;
-            max-height: 768px;
-            aspect-ratio: 1024 / 768;
+            width: 1024px;
+            height: 768px;
+            background: #000;
+            overflow: hidden;
         }
-        canvas { 
-            display: block; 
-            width: 100%; 
-            height: 100%; 
-        }
+        canvas { display: block; width: 100%; height: 100%; object-fit: contain;}
         
-        #leaderboardPanel { width: 250px; height: 100%; max-height: 768px; background: #111; border: 2px solid var(--accent-color); padding: 20px; box-sizing: border-box; overflow-y: auto; border-radius: 8px; }
+        #leaderboardPanel { width: 250px; height: 768px; background: #111; border: 2px solid var(--accent-color); padding: 20px; box-sizing: border-box; overflow-y: auto; border-radius: 8px; flex-shrink: 0;}
         #leaderboardPanel h2 { color: var(--accent-color); text-align: center; font-size: 1.2em; margin-top: 0; }
         .lb-entry { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #333; font-size: 0.9em; }
         .lb-entry span:nth-child(2) { color: var(--gold-color); }
 
-        @media (max-width: 1024px) {
-            #leaderboardPanel { display: none; }
-            #appWrapper { gap: 0; }
-        }
-
         #uiLayer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; display: flex; justify-content: center; align-items: center; z-index: 10; }
         .screen { background: var(--ui-bg); padding: 30px; border: 2px solid var(--accent-color); border-radius: 8px; text-align: center; pointer-events: auto; box-shadow: 0 0 15px var(--accent-color); display: none; max-width: 90%; max-height: 90%; overflow-y: auto; }
         .screen.active { display: block; }
-        h1 { margin-top: 0; color: var(--accent-color); text-shadow: 0 0 10px var(--accent-color); }
+        
+        h1 { margin-top: 0; color: var(--accent-color); text-shadow: 0 0 10px var(--accent-color); font-size: 2em;}
         h2 { color: var(--danger-color); }
         h3 { color: var(--gold-color); margin-bottom: 5px; }
         
-        input { padding: 10px; font-size: 1.2em; font-family: inherit; background: #000; border: 1px solid var(--accent-color); color: #fff; width: 80%; margin-bottom: 15px; text-align: center; box-sizing: border-box; }
+        input { padding: 10px; font-size: 1.2em; font-family: inherit; background: #000; border: 1px solid var(--accent-color); color: #fff; width: 80%; margin-bottom: 15px; text-align: center; }
         button { background: var(--accent-color); color: #000; border: none; padding: 12px 24px; font-size: 1em; font-weight: bold; cursor: pointer; border-radius: 4px; transition: 0.2s; font-family: inherit; margin: 5px; }
         button:hover { background: #fff; box-shadow: 0 0 15px #fff; }
         button.danger { background: var(--danger-color); color: #fff; }
 
         .menu-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
         .store-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-top: 20px; text-align: left; }
-        @media (max-width: 600px) {
-            .menu-grid { grid-template-columns: 1fr; }
-            .store-grid { grid-template-columns: 1fr 1fr; }
-        }
-        
         .weapon-card { border: 1px solid #555; padding: 15px; background: #111; position: relative; }
         .weapon-card.unlocked { border-color: var(--accent-color); cursor: pointer; }
         .weapon-card.selected { box-shadow: 0 0 15px var(--accent-color); background: #1a2a2a; }
         .weapon-card .buy-btn { width: 100%; background: var(--gold-color); margin-top: 10px; }
-        .weapon-card h4 { margin: 0 0 5px 0; color: #fff; }
-        .weapon-card p { margin: 2px 0; font-size: 0.8em; color: #aaa; }
+        .weapon-card h4 { margin: 0 0 5px 0; color: #fff; font-size: 0.9em; }
+        .weapon-card p { margin: 2px 0; font-size: 0.7em; color: #aaa; }
         
         .mutations-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-top: 20px; }
-        @media (max-width: 600px) { .mutations-grid { grid-template-columns: 1fr; } }
-        .mutation-card { border: 1px solid var(--accent-color); padding: 20px; background: #111; cursor: pointer; transition: 0.2s; }
+        .mutation-card { border: 1px solid var(--accent-color); padding: 15px; background: #111; cursor: pointer; transition: 0.2s; font-size: 0.8em;}
         .mutation-card:hover { background: #222; transform: scale(1.05); box-shadow: 0 0 15px var(--accent-color); }
 
-        .stats-bar { display: flex; justify-content: space-around; background: #222; padding: 10px; border-radius: 4px; margin-bottom: 20px; font-weight: bold; flex-wrap: wrap; gap: 10px; }
+        .stats-bar { display: flex; justify-content: space-around; background: #222; padding: 10px; border-radius: 4px; margin-bottom: 20px; font-weight: bold; font-size: 0.8em; flex-wrap: wrap; gap: 5px;}
         .stats-bar span { color: var(--accent-color); }
 
-        #mobileControls {
-            position: absolute;
-            inset: 0;
-            pointer-events: none;
-            display: none;
-            z-index: 5;
-        }
-        #leftTouchZone {
-            position: absolute;
-            left: 0;
-            top: 0;
-            width: 50%;
+        /* Controles overlay originales (se ocultan por defecto) */
+        #mobileControls { display: none; }
+        
+        /* --- Contenedores Estilo Consola Vertical (Móvil) --- */
+        #mobileConsole {
+            display: none; /* Oculto en PC */
+            flex-direction: column;
+            width: 100%;
             height: 100%;
-            pointer-events: auto;
+            background-color: var(--console-bg);
+            padding: 10px;
+            overflow: hidden;
+            border: 4px solid var(--console-border);
+            border-radius: 15px;
         }
-        #joystickBase {
-            position: absolute;
-            width: 120px;
-            height: 120px;
-            background: rgba(0,255,204,0.15);
-            border: 2px solid #00ffcc;
-            border-radius: 50%;
-            pointer-events: none;
-            display: none;
-            transform: translate(-50%, -50%);
+
+        #consoleHeader {
+            display: flex;
+            justify-content: flex-start;
+            padding: 5px;
+            height: 50px;
+            position: relative;
         }
-        #joystickStick {
-            position: absolute;
-            width: 40px;
-            height: 40px;
-            background: #00ffcc;
-            border-radius: 50%;
-            left: 50%;
-            top: 50%;
-            transform: translate(-50%, -50%);
-        }
-        #mobileShoot {
-            position: absolute;
-            right: 5%;
-            bottom: 5%;
-            width: 20%;
-            height: auto;
-            aspect-ratio: 1/1;
-            max-width: 100px;
-            max-height: 100px;
-            font-size: 28px;
-            border-radius: 50%;
-            background: #ff0055;
-            color: white;
-            pointer-events: auto;
+
+        #screenArea {
+            flex: 1; /* Toma el espacio disponible */
             display: flex;
             justify-content: center;
             align-items: center;
+            background: #000;
+            border: 8px solid var(--console-border);
+            border-radius: 5px;
+            position: relative;
+            overflow: hidden;
+            aspect-ratio: 1024 / 768; /* Forzamos ratio original */
+            max-width: 100%;
+            margin: 0 auto;
         }
+
+        #consoleControls {
+            height: 180px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 20px;
+            position: relative;
+        }
+
+        /* --- Adaptación Responsive y Estilo GameBoy --- */
+        @media (max-width: 1024px) {
+            #appWrapper { flex-direction: column; gap: 0; padding: 10px; }
+            #gameContainer { display: none; } /* Ocultamos versión PC */
+            #leaderboardPanel { display: none; } /* Ocultamos panel original */
+            #mobileConsole { display: flex; } /* Mostramos Consola vertical */
+
+            /* Ajuste de escalas en menús para pantalla estrecha */
+            h1 { font-size: 1.5em; }
+            .screen { padding: 15px; }
+            input { font-size: 1em; padding: 8px; }
+            button { padding: 10px 18px; font-size: 0.9em; }
+            .stats-bar { font-size: 0.7em; padding: 5px; }
+            .store-grid, .mutations-grid { gap: 8px; }
+            .weapon-card, .mutation-card { padding: 10px; }
+        }
+
+        /* Elementos específicos de controles GameBoy */
         #mobilePause {
-            position: absolute;
-            right: 2%;
-            top: 2%;
-            width: 40px;
-            height: 40px;
-            border-radius: 8px;
-            background: #444;
-            color: white;
-            pointer-events: auto;
-            padding: 0;
+            position: relative; /* Dentro de header */
+            width: 40px; height: 40px; border-radius: 8px;
+            background: #444; color: white; border: 2px solid #000;
+            cursor: pointer; font-family: inherit; font-weight: bold;
+            pointer-events: auto; z-index: 15;
+            display: flex; justify-content: center; align-items: center; margin: 0;
         }
+
+        #gbMoveZone {
+            position: relative; width: 120px; height: 120px;
+            background: #1a1a20; border-radius: 50%;
+            border: 4px solid #000; pointer-events: auto;
+        }
+        #joystickBase {
+            position: absolute; inset: 0; border-radius: 50%;
+            background: rgba(0,255,204,0.05); pointer-events: none;
+        }
+        #joystickStick {
+            position: absolute; width: 40px; height: 40px;
+            background: #00ffcc; border-radius: 50%;
+            left: 50%; top: 50%; transform: translate(-50%, -50%);
+            box-shadow: 0 0 10px var(--accent-color);
+        }
+
+        #gbShootZone {
+            position: relative; width: 100px; height: 100px;
+            pointer-events: auto; display: flex; justify-content: center; align-items: center;
+        }
+        #mobileShoot {
+            width: 80px; height: 80px; border-radius: 50%;
+            background: #ff0055; color: white;
+            border: 4px solid #000; font-size: 32px;
+            cursor: pointer; box-shadow: 0 4px 0 #800;
+            display: flex; justify-content: center; align-items: center; padding: 0;
+        }
+        #mobileShoot:active { transform: translateY(2px); box-shadow: 0 2px 0 #800; }
+
+        /* Panel de pilotos integrado abajo */
+        #integratedLeaderboard {
+            height: 150px; margin-top: 10px;
+            background: #111; border: 4px solid var(--console-border);
+            border-radius: 5px; padding: 10px; overflow: hidden; display: flex; flex-direction: column;
+        }
+        #integratedLeaderboard h2 { font-size: 1em; margin: 0 0 5px 0; }
+        #integratedLbContainer { flex: 1; overflow-y: auto; font-size: 0.8em; }
+
     </style>
 </head>
 <body>
 <div id="appWrapper">
     <div id="gameContainer">
         <canvas id="gameCanvas" width="1024" height="768"></canvas>
-        <div id="mobileControls">
-            <div id="leftTouchZone"></div>
-            <div id="joystickBase">
-                <div id="joystickStick"></div>
-            </div>
-            <button id="mobileShoot">●</button>
-            <button id="mobilePause">II</button>
-        </div>
         <div id="uiLayer">
-            <div id="loginScreen" class="screen active">
-                <h1>NEON ARMOR</h1><p>Identificación de Usuario</p>
-                <input type="text" id="usernameInput" placeholder="Usuario" maxlength="12"><br>
-                <input type="password" id="passwordInput" placeholder="Contraseña"><br>
-                <button id="btnLogin">Acceder</button>
             </div>
-            <div id="menuScreen" class="screen">
-                <h1>NEON ARMOR</h1>
-                <div class="stats-bar">
-                    <div>Piloto: <span id="uiUser"></span></div>
-                    <div>Victorias: <span id="uiWins"></span></div>
-                    <div>Bajas: <span id="uiDeaths"></span></div>
-                    <div>Créditos: <span id="uiCoins" style="color:var(--gold-color)"></span></div>
-                </div>
-                <div class="menu-grid">
-                    <button id="btnStory">MODO HISTORIA</button>
-                    <button id="btnSurvival" class="danger">MODO SUPERVIVENCIA</button>
-                    <button id="btnStore">ARMERÍA</button>
-                    <button id="btnSound">Sonido: <span id="soundStatus">ON</span></button>
-                </div>
-                <button id="btnLogout" style="background:#444; color:#fff;">Cerrar Sesión</button>
-            </div>
-            <div id="storeScreen" class="screen">
-                <h2>ARMERÍA</h2><p>Créditos disponibles: <span id="storeCoins" style="color:var(--gold-color)"></span></p>
-                <div class="store-grid" id="storeContainer" style="max-height: 50vh; overflow-y: auto; padding: 10px;"></div>
-                <button id="btnBackToMenu" style="margin-top: 20px;">Volver al Menú</button>
-            </div>
-            <div id="mutationScreen" class="screen">
-                <h2>MUTACIÓN DISPONIBLE</h2><p>Selecciona una mejora para continuar:</p>
-                <div class="mutations-grid" id="mutationsContainer"></div>
-            </div>
-            <div id="pauseScreen" class="screen">
-                <h2>JUEGO PAUSADO</h2>
-                <button id="btnResume">Continuar</button>
-                <button id="btnPauseSound">Sonido: <span id="pauseSoundStatus">ON</span></button>
-                <button id="btnQuit" class="danger">Abandonar Partida</button>
-            </div>
-            <div id="gameOverScreen" class="screen">
-                <h2>FIN DE LA TRANSMISIÓN</h2><p id="goContext"></p>
-                <p>Puntuación: <span id="goScore"></span></p><p>Monedas obtenidas: <span id="goCoins" style="color:var(--gold-color)"></span></p>
-                <button id="btnReturnDead">Volver al Menú</button>
-            </div>
-            <div id="victoryScreen" class="screen">
-                <h2 style="color: var(--gold-color)">¡TRONO ALCANZADO!</h2><p>El jefe final ha sido derrotado.</p>
-                <p>Puntuación final: <span id="vicScore"></span></p><p>Monedas obtenidas: <span id="vicCoins" style="color:var(--gold-color)"></span></p>
-                <button id="btnReturnWin">Volver al Menú</button>
-            </div>
-        </div>
     </div>
     <div id="leaderboardPanel"><h2>TOP PILOTOS — ASCENSION</h2><div id="lbContainer"></div></div>
+
+    <div id="mobileConsole">
+        <header id="consoleHeader">
+            </header>
+
+        <div id="screenArea">
+            <div id="consoleUiLayer">
+                </div>
+            </div>
+
+        <div id="consoleControls">
+            <div id="gbShootZone">
+                </div>
+            <div id="gbMoveZone">
+                <div id="joystickBase"><div id="joystickStick"></div></div>
+                </div>
+        </div>
+
+        <div id="integratedLeaderboard">
+            <h2>TOP PILOTOS</h2>
+            <div id="integratedLbContainer"></div>
+        </div>
+    </div>
+
+    <div id="originalUiElements" style="display: none;">
+        <div id="mobileControls"><button id="originalMobileShoot"></button><button id="originalMobilePause"></button></div>
+
+        <div id="loginScreen" class="screen active">
+            <h1>NEON ARMOR</h1><p>Identificación de Usuario</p>
+            <input type="text" id="usernameInput" placeholder="Usuario" maxlength="12"><br>
+            <input type="password" id="passwordInput" placeholder="Contraseña"><br>
+            <button id="btnLogin">Acceder</button>
+        </div>
+        <div id="menuScreen" class="screen">
+            <h1>NEON ARMOR</h1>
+            <div class="stats-bar">
+                <div>Piloto: <span id="uiUser"></span></div>
+                <div>Victorias: <span id="uiWins"></span></div>
+                <div>Bajas: <span id="uiDeaths"></span></div>
+                <div>Créditos: <span id="uiCoins" style="color:var(--gold-color)"></span></div>
+            </div>
+            <div class="menu-grid">
+                <button id="btnStory">MODO HISTORIA</button>
+                <button id="btnSurvival" class="danger">MODO SUPERVIVENCIA</button>
+                <button id="btnStore">ARMERÍA</button>
+                <button id="btnSound">Sonido: <span id="soundStatus">ON</span></button>
+            </div>
+            <button id="btnLogout" style="background:#444; color:#fff;">Cerrar Sesión</button>
+        </div>
+        <div id="storeScreen" class="screen">
+            <h2>ARMERÍA</h2><p>Créditos disponibles: <span id="storeCoins" style="color:var(--gold-color)"></span></p>
+            <div class="store-grid" id="storeContainer" style="max-height: 40vh; overflow-y: auto; padding: 10px;"></div>
+            <button id="btnBackToMenu" style="margin-top: 15px;">Volver al Menú</button>
+        </div>
+        <div id="mutationScreen" class="screen">
+            <h2>MUTACIÓN</h2><p>Selecciona mejora:</p>
+            <div class="mutations-grid" id="mutationsContainer"></div>
+        </div>
+        <div id="pauseScreen" class="screen">
+            <h2>JUEGO PAUSADO</h2>
+            <button id="btnResume">Continuar</button>
+            <button id="btnPauseSound">Sonido: <span id="pauseSoundStatus">ON</span></button>
+            <button id="btnQuit" class="danger">Abandonar</button>
+        </div>
+        <div id="gameOverScreen" class="screen">
+            <h2>FIN DE TRANSMISIÓN</h2><p id="goContext"></p>
+            <p>Puntos: <span id="goScore"></span></p><p>Monedas: <span id="goCoins" style="color:var(--gold-color)"></span></p>
+            <button id="btnReturnDead">Volver al Menú</button>
+        </div>
+        <div id="victoryScreen" class="screen">
+            <h2 style="color: var(--gold-color)">¡TRONO ALCANZADO!</h2><p>Jefe final derrotado.</p>
+            <p>Puntuación: <span id="vicScore"></span></p><p>Monedas: <span id="vicCoins" style="color:var(--gold-color)"></span></p>
+            <button id="btnReturnWin">Volver al Menú</button>
+        </div>
+
+        <button id="mobilePause">II</button>
+        <button id="mobileShoot">●</button>
+    </div>
 </div>
 
 <script>
 const CANVAS_WIDTH = 1024, CANVAS_HEIGHT = 768, TILE_SIZE = 64;
 
+// --- Configuración e Inicialización Retenida al 100% ---
 const WEAPONS = {
     p1: { id: 'p1', name: 'Pistola Básica', type: 'pistol', tier: 1, cost: 0, damage: 8, fireRate: 350, speed: 600, spread: 0.04, auto: false, color: '#aaa', magSize: 12, reloadTime: 1.2 },
     p2: { id: 'p2', name: 'Pistola Táctica', type: 'pistol', tier: 2, cost: 150, damage: 15, fireRate: 300, speed: 700, spread: 0.03, auto: false, color: '#0f0', magSize: 15, reloadTime: 1.0 },
@@ -269,14 +332,22 @@ function loadDB() {
 }
 
 function updateLeaderboard() {
-    const container = document.getElementById('lbContainer');
-    if(!container) return;
-    container.innerHTML = '';
+    // Actualiza ambos contenedores (PC e Integrado GB)
+    const containerPC = document.getElementById('lbContainer');
+    const containerGB = document.getElementById('integratedLbContainer');
+    if(!containerPC || !containerGB) return;
+    
+    containerPC.innerHTML = '';
+    containerGB.innerHTML = '';
+    
     let arr = Object.keys(db.users).map(k => ({ user: k, score: db.users[k].highScore || 0 })).filter(x => x.score > 0);
     arr.sort((a, b) => b.score - a.score).slice(0, 20).forEach((entry, i) => {
-        const div = document.createElement('div'); div.className = 'lb-entry';
-        div.innerHTML = `<span>${i+1}. ${entry.user}</span><span>${entry.score}</span>`;
-        container.appendChild(div);
+        const divPC = document.createElement('div'); divPC.className = 'lb-entry';
+        divPC.innerHTML = `<span>${i+1}. ${entry.user}</span><span>${entry.score}</span>`;
+        containerPC.appendChild(divPC);
+        
+        const divGB = divPC.cloneNode(true); // Clonamos para el panel integrado
+        containerGB.appendChild(divGB);
     });
 }
 
@@ -669,14 +740,22 @@ class Player {
         if (this.invulnerableTimer > 0) this.invulnerableTimer -= dt;
         if (this.dashTimer > 0) { this.dashTimer -= dt; if (this.dashTimer <= 0) this.isDashing = false; }
         
+        // Dash con Shift (PC) o automáticamente si joystick está al máximo (Móvil simplificado)
         if (game.input.keys['ShiftLeft'] && this.dashCooldownTimer <= 0 && !this.isDashing) {
-            this.isDashing = true; this.dashTimer = 0.2; this.dashCooldownTimer = this.dashCooldown; this.invulnerableTimer = 0.2;
+            this.triggerDash();
         }
 
         let dx = 0, dy = 0;
         if (game.input.keys['KeyW']) dy -= 1; if (game.input.keys['KeyS']) dy += 1;
         if (game.input.keys['KeyA']) dx -= 1; if (game.input.keys['KeyD']) dx += 1;
-        if (dx !== 0 || dy !== 0) { const len = Math.hypot(dx, dy); dx /= len; dy /= len; }
+        
+        // Input de Joystick móvil sobreescribe teclado
+        if (game.isMobile && game.mobileInput.joyActive) {
+            dx = game.mobileInput.joyX;
+            dy = game.mobileInput.joyY;
+        }
+
+        if (dx !== 0 || dy !== 0) { const len = Math.hypot(dx, dy); if(len > 1) {dx /= len; dy /= len;} }
 
         const curSpeed = this.isDashing ? this.baseSpeed * 3 : this.baseSpeed;
         let nx = this.x + dx * curSpeed * dt, ny = this.y + dy * curSpeed * dt;
@@ -684,31 +763,42 @@ class Player {
         if (!level.checkCollision(nx, this.y, this.radius) && !this.checkPropCollision(nx, this.y, game.props)) this.x = nx;
         if (!level.checkCollision(this.x, ny, this.radius) && !this.checkPropCollision(this.x, ny, game.props)) this.y = ny;
 
-        let targetX = game.input.mouse.x + game.camera.x;
-        let targetY = game.input.mouse.y + game.camera.y;
-
+        // Apuntado
+        let targetX, targetY;
         if (game.isMobile) {
-            let closest = null, minDist = 600;
-            for (let e of game.enemies) {
-                if (e.active) {
-                    let d = distance(this.x, this.y, e.x, e.y);
-                    if (d < minDist) { minDist = d; closest = e; }
-                }
-            }
-            if (closest) { targetX = closest.x; targetY = closest.y; }
-            else if (dx !== 0 || dy !== 0) { targetX = this.x + dx * 100; targetY = this.y + dy * 100; }
+            // Auto-aim en móvil al enemigo más cercano
+            let closest = null, minDist = 9999;
+            game.enemies.forEach(e => {
+                if(!e.active) return;
+                let d = distance(this.x, this.y, e.x, e.y);
+                if(d < minDist) { minDist = d; closest = e; }
+            });
+            if(closest) { targetX = closest.x; targetY = closest.y; }
+            else { targetX = this.x + dx; targetY = this.y + dy; } // Apuntar a dirección de movimiento si no hay enemigos
+        } else {
+            targetX = game.input.mouse.x + game.camera.x;
+            targetY = game.input.mouse.y + game.camera.y;
         }
-
+        
         this.angle = Math.atan2(targetY - this.y, targetX - this.x);
 
         this.weapon.update(dt);
+        
+        // Recarga
         if (game.input.keys['KeyR'] && !game.prevKeys['KeyR']) this.weapon.attemptActiveReload(game);
         else if (game.input.keys['KeyR'] && !this.weapon.reloading && this.weapon.ammo < this.weapon.config.magSize) this.weapon.startReload();
 
-        if (game.input.mouse.down || (this.weapon.config.auto && game.input.mouse.down)) {
-            this.weapon.fire(this.x, this.y, targetX, targetY, game, game.time);
-            if(!this.weapon.config.auto) game.input.mouse.down = false;
+        // Disparo (Ratón o Botón móvil)
+        let shooting = game.input.mouse.down || (game.isMobile && game.mobileInput.shootDown);
+        if (shooting || (this.weapon.config.auto && shooting)) {
+            if(this.weapon.fire(this.x, this.y, targetX, targetY, game, game.time)) {
+                if(!this.weapon.config.auto) { game.input.mouse.down = false; game.mobileInput.shootDown = false; }
+            }
         }
+    }
+    triggerDash() {
+        if(this.dashCooldownTimer > 0 || this.isDashing) return;
+        this.isDashing = true; this.dashTimer = 0.2; this.dashCooldownTimer = this.dashCooldown; this.invulnerableTimer = 0.2;
     }
     checkPropCollision(x, y, props) {
         for(let p of props) if(p.active && p.type !== 'trap' && distance(x, y, p.x, p.y) < this.radius + p.radius) return true;
@@ -879,7 +969,7 @@ class Enemy {
                 if (this.type === 'boss') {
                     game.score += 500;
                 } else {
-                    game.score += randInt(1, 6);
+                    game.score += randInt(1, 6); // 1 a 5 puntos reales
                 }
             }
             game.spawnParticles(this.x, this.y, this.color, this.radius);
@@ -940,103 +1030,33 @@ class Portal {
 
 class Game {
     constructor() {
-        this.isMobile = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
-        this.mobileControls = document.getElementById('mobileControls');
-        if(this.isMobile){
-            this.mobileControls.style.display = 'block';
-        }
+        // Detección móvil mejorada
+        this.isMobile = /Android|iPhone|iPad|iPod|Opera Mini|IEMobile|WPDesktop/i.test(navigator.userAgent) || ('ontouchstart' in window);
+        
         this.canvas = document.getElementById('gameCanvas'); this.ctx = this.canvas.getContext('2d');
         this.input = { keys: {}, mouse: { x: 0, y: 0, down: false } }; this.prevKeys = {};
+        
+        // Estado input móvil
+        this.mobileInput = { joyActive: false, joyX: 0, joyY: 0, shootDown: false };
+
         window.gameInstance = this;
         
+        // Configurar Layout según dispositivo
+        this.setupLayout();
+
+        // Listeners Genéricos (PC/Base)
         window.addEventListener('keydown', e => { this.input.keys[e.code] = true; if(e.code === 'Escape') this.togglePause(); });
         window.addEventListener('keyup', e => { this.input.keys[e.code] = false; });
         
-        this.canvas.addEventListener('mousemove', e => { 
-            const r = this.canvas.getBoundingClientRect(); 
-            const scaleX = this.canvas.width / r.width;
-            const scaleY = this.canvas.height / r.height;
-            this.input.mouse.x = (e.clientX - r.left) * scaleX; 
-            this.input.mouse.y = (e.clientY - r.top) * scaleY; 
-        });
+        // Mouse Listeners (Ajustados para escalado de canvas)
+        this.canvas.addEventListener('mousemove', e => this.updateMousePos(e));
         this.canvas.addEventListener('mousedown', () => this.input.mouse.down = true);
         this.canvas.addEventListener('mouseup', () => this.input.mouse.down = false);
+        this.canvas.addEventListener('contextmenu', e => e.preventDefault()); // Prevenir menú context
 
+        // Listeners Táctiles Móviles
         if(this.isMobile){
-            const base = document.getElementById('joystickBase');
-            const stick = document.getElementById('joystickStick');
-            const shootBtn = document.getElementById('mobileShoot');
-            const pauseBtn = document.getElementById('mobilePause');
-            const leftZone = document.getElementById('leftTouchZone');
-
-            let joystickActive = false;
-            let startX = 0;
-            let startY = 0;
-            let joyTouchId = null;
-
-            leftZone.addEventListener('touchstart', e => {
-                e.preventDefault();
-                for(let i=0; i<e.changedTouches.length; i++) {
-                    let t = e.changedTouches[i];
-                    if (!joystickActive) {
-                        joystickActive = true;
-                        joyTouchId = t.identifier;
-                        startX = t.clientX;
-                        startY = t.clientY;
-                        base.style.display = 'block';
-                        
-                        const rect = document.getElementById('gameContainer').getBoundingClientRect();
-                        base.style.left = (startX - rect.left) + 'px';
-                        base.style.top = (startY - rect.top) + 'px';
-                        stick.style.transform = `translate(-50%, -50%)`;
-                    }
-                }
-            }, {passive: false});
-
-            leftZone.addEventListener('touchmove', e => {
-                e.preventDefault();
-                if(!joystickActive) return;
-                for(let i=0; i<e.changedTouches.length; i++) {
-                    let t = e.changedTouches[i];
-                    if(t.identifier === joyTouchId) {
-                        const dx = t.clientX - startX;
-                        const dy = t.clientY - startY;
-
-                        const maxDist = 40;
-                        const dist = Math.min(maxDist, Math.hypot(dx, dy));
-                        const angle = Math.atan2(dy, dx);
-
-                        const moveX = Math.cos(angle) * dist;
-                        const moveY = Math.sin(angle) * dist;
-
-                        stick.style.transform = `translate(calc(-50% + ${moveX}px), calc(-50% + ${moveY}px))`;
-
-                        this.input.keys['KeyW'] = moveY < -10;
-                        this.input.keys['KeyS'] = moveY > 10;
-                        this.input.keys['KeyA'] = moveX < -10;
-                        this.input.keys['KeyD'] = moveX > 10;
-                    }
-                }
-            }, {passive: false});
-
-            leftZone.addEventListener('touchend', e => {
-                e.preventDefault();
-                for(let i=0; i<e.changedTouches.length; i++) {
-                    if(e.changedTouches[i].identifier === joyTouchId) {
-                        joystickActive = false;
-                        joyTouchId = null;
-                        base.style.display = 'none';
-                        this.input.keys['KeyW'] = false;
-                        this.input.keys['KeyS'] = false;
-                        this.input.keys['KeyA'] = false;
-                        this.input.keys['KeyD'] = false;
-                    }
-                }
-            }, {passive: false});
-
-            shootBtn.addEventListener('touchstart', (e)=>{ e.preventDefault(); this.input.mouse.down = true; }, {passive: false});
-            shootBtn.addEventListener('touchend', (e)=>{ e.preventDefault(); this.input.mouse.down = false; }, {passive: false});
-            pauseBtn.addEventListener('touchstart', (e)=>{ e.preventDefault(); this.togglePause(); }, {passive: false});
+            this.setupMobileControls();
         }
 
         this.pools = {
@@ -1050,7 +1070,145 @@ class Game {
         this.camera = { x: 0, y: 0 }; this.shakeTime = 0; this.shakeMagnitude = 0; this.flowTimer = 0;
         this.lastFlowX = null; this.lastFlowY = null;
         
-        this.resetGameData(); this.setupDOM(); loadDB();
+        // Zoom para móvil (aplica a mundo y HUD)
+        this.zoomFactor = this.isMobile ? 1.5 : 1.0; 
+
+        this.resetGameData(); this.setupDOMListeners(); loadDB();
+    }
+
+    setupLayout() {
+        const wrapper = document.getElementById('appWrapper');
+        const containerPC = document.getElementById('gameContainer');
+        const lbPanelOriginal = document.getElementById('leaderboardPanel');
+        const consoleGB = document.getElementById('mobileConsole');
+        const originalElems = document.getElementById('originalUiElements');
+        
+        // Mover elementos de UI al contenedor genérico originalElems para tener referencias únicas
+        const screens = document.querySelectorAll('.screen');
+        screens.forEach(s => originalElems.appendChild(s));
+
+        if (this.isMobile) {
+            // Ocultar layout PC, mostrar GB
+            containerPC.style.display = 'none';
+            lbPanelOriginal.style.display = 'none';
+            consoleGB.style.display = 'flex';
+            
+            // Mover Canvas y Capa UI a la zona de pantalla de la consola
+            const screenArea = document.getElementById('screenArea');
+            const uiLayerGB = document.getElementById('consoleUiLayer');
+            uiLayerGB.id = 'uiLayer'; // Renombrar para consistencia lógica
+            uiLayerGB.className = 'ui-layer-gb'; // Estilo específico si se requiere overlay sobre canvas escalado
+            
+            screenArea.insertBefore(this.canvas, uiLayerGB);
+
+            // Mover pantallas de UI a la capa de consola
+            originalElems.querySelectorAll('.screen').forEach(s => uiLayerGB.appendChild(s));
+            
+            // Mover botones GB definidos en originalUiElements a sus zonas
+            const btnPause = document.getElementById('mobilePause');
+            const btnShoot = document.getElementById('mobileShoot');
+            document.getElementById('consoleHeader').appendChild(btnPause);
+            document.getElementById('gbShootZone').appendChild(btnShoot);
+
+        } else {
+            // Layout PC
+            const uiLayerPC = document.getElementById('uiLayer');
+            // Asegurar que pantallas estén en el layer correcto
+            originalElems.querySelectorAll('.screen').forEach(s => uiLayerPC.appendChild(s));
+        }
+    }
+
+    updateMousePos(e) {
+        const rect = this.canvas.getBoundingClientRect();
+        const scaleX = CANVAS_WIDTH / rect.width;
+        const scaleY = CANVAS_HEIGHT / rect.height;
+        // Coordenadas lógicas dentro del canvas de 1024x768
+        this.input.mouse.x = (e.clientX - rect.left) * scaleX;
+        this.input.mouse.y = (e.clientY - rect.top) * scaleY;
+    }
+
+    setupMobileControls() {
+        const moveZone = document.getElementById('gbMoveZone');
+        const stick = document.getElementById('joystickStick');
+        const shootBtn = document.getElementById('mobileShoot');
+        const pauseBtn = document.getElementById('mobilePause');
+
+        let joyActive = false;
+        let joyTouchId = null;
+        const maxDist = 40;
+
+        // Joystick (Derecha - Zona gbMoveZone)
+        moveZone.addEventListener('touchstart', e => {
+            e.preventDefault();
+            if(joyActive) return;
+            const touch = e.changedTouches[0];
+            joyActive = true;
+            joyTouchId = touch.identifier;
+            this.mobileInput.joyActive = true;
+        }, {passive: false});
+
+        moveZone.addEventListener('touchmove', e => {
+            e.preventDefault();
+            if(!joyActive) return;
+            for(let i=0; i<e.changedTouches.length; i++){
+                const touch = e.changedTouches[i];
+                if(touch.identifier !== joyTouchId) continue;
+                
+                const rect = moveZone.getBoundingClientRect();
+                const centerX = rect.left + rect.width / 2;
+                const centerY = rect.top + rect.height / 2;
+                
+                let dx = touch.clientX - centerX;
+                let dy = touch.clientY - centerY;
+                const dist = Math.hypot(dx, dy);
+                
+                if (dist > 0) {
+                    dx /= dist; dy /= dist;
+                    const clampedDist = Math.min(dist, maxDist);
+                    stick.style.transform = `translate(calc(-50% + ${dx * clampedDist}px), calc(-50% + ${dy * clampedDist}px))`;
+                    
+                    // Normalizado -1 a 1 para lógica de player
+                    this.mobileInput.joyX = dx * (clampedDist / maxDist);
+                    this.mobileInput.joyY = dy * (clampedDist / maxDist);
+                }
+            }
+        }, {passive: false});
+
+        const endJoy = e => {
+            e.preventDefault();
+            for(let i=0; i<e.changedTouches.length; i++){
+                if(e.changedTouches[i].identifier === joyTouchId) {
+                    joyActive = false;
+                    joyTouchId = null;
+                    this.mobileInput.joyActive = false;
+                    this.mobileInput.joyX = 0;
+                    this.mobileInput.joyY = 0;
+                    stick.style.transform = 'translate(-50%, -50%)';
+                }
+            }
+        };
+        moveZone.addEventListener('touchend', endJoy, {passive: false});
+        moveZone.addEventListener('touchcancel', endJoy, {passive: false});
+
+        // Disparo (Izquierda)
+        shootBtn.addEventListener('touchstart', e => {
+            e.preventDefault();
+            this.mobileInput.shootDown = true;
+            if(this.state === 'MENU') {
+                // Truco para inicializar audio en iOS móvil al primer toque
+                audioSys.init();
+            }
+        }, {passive: false});
+        shootBtn.addEventListener('touchend', e => {
+            e.preventDefault();
+            this.mobileInput.shootDown = false;
+        }, {passive: false});
+
+        // Pausa (Arriba Izquierda)
+        pauseBtn.addEventListener('touchstart', e => {
+            e.preventDefault();
+            this.togglePause();
+        }, {passive: false});
     }
 
     resetGameData() {
@@ -1067,37 +1225,60 @@ class Game {
         }
     }
 
-    setupDOM() {
-        document.getElementById('btnLogin').onclick = () => {
-            const user = document.getElementById('usernameInput').value.trim(), pass = document.getElementById('passwordInput').value;
+    setupDOMListeners() {
+        // IDs compartidos entre layouts PC y Móvil
+        const getById = id => document.getElementById(id);
+
+        getById('btnLogin').onclick = () => {
+            audioSys.init(); // Init audio al login (interacción usuario necesaria)
+            const user = getById('usernameInput').value.trim(), pass = getById('passwordInput').value;
             if(user && pass) {
                 if(db.users[user] && db.users[user].password !== pass) return alert('Contraseña incorrecta');
                 if(!db.users[user]) { db.users[user] = { password: pass, coins: 0, wins: 0, deaths: 0, unlocks: ['p1', 's1', 'r1'], selectedWeapon: 'p1', highScore: 0 }; saveDB(); }
                 currentUser = user; this.updateMenuUI(); this.setUIState('menuScreen'); this.state = 'MENU';
-                audioSys.init(); audioSys.startBGM('menu');
+                audioSys.startBGM('menu');
             }
         };
-        document.getElementById('btnLogout').onclick = () => { currentUser = null; document.getElementById('passwordInput').value=''; this.setUIState('loginScreen'); this.state='LOGIN'; audioSys.stopBGM(); };
-        document.getElementById('btnStory').onclick = () => this.startRun('STORY');
-        document.getElementById('btnSurvival').onclick = () => this.startRun('SURVIVAL');
-        document.getElementById('btnStore').onclick = () => { this.renderStore(); this.setUIState('storeScreen'); this.state = 'STORE'; };
-        document.getElementById('btnBackToMenu').onclick = () => { this.updateMenuUI(); this.setUIState('menuScreen'); this.state = 'MENU'; };
-        document.getElementById('btnSound').onclick = () => this.toggleSound();
-        document.getElementById('btnPauseSound').onclick = () => this.toggleSound();
-        document.getElementById('btnResume').onclick = () => this.togglePause();
-        document.getElementById('btnQuit').onclick = () => { this.endRun(false); audioSys.startBGM('menu'); };
-        document.getElementById('btnReturnDead').onclick = () => { this.updateMenuUI(); this.setUIState('menuScreen'); this.state = 'MENU'; audioSys.startBGM('menu'); };
-        document.getElementById('btnReturnWin').onclick = () => { this.updateMenuUI(); this.setUIState('menuScreen'); this.state = 'MENU'; audioSys.startBGM('menu'); };
+        getById('btnLogout').onclick = () => { currentUser = null; getById('passwordInput').value=''; this.setUIState('loginScreen'); this.state='LOGIN'; audioSys.stopBGM(); };
+        getById('btnStory').onclick = () => this.startRun('STORY');
+        getById('btnSurvival').onclick = () => this.startRun('SURVIVAL');
+        getById('btnStore').onclick = () => { this.renderStore(); this.setUIState('storeScreen'); this.state = 'STORE'; };
+        getById('btnBackToMenu').onclick = () => { this.updateMenuUI(); this.setUIState('menuScreen'); this.state = 'MENU'; };
+        
+        const toggleSnd = () => this.toggleSound();
+        getById('btnSound').onclick = toggleSnd;
+        getById('btnPauseSound').onclick = toggleSnd;
+        
+        getById('btnResume').onclick = () => this.togglePause();
+        getById('btnQuit').onclick = () => { this.endRun(false); audioSys.startBGM('menu'); };
+        
+        const retMenu = () => { this.updateMenuUI(); this.setUIState('menuScreen'); this.state = 'MENU'; audioSys.startBGM('menu'); };
+        getById('btnReturnDead').onclick = retMenu;
+        getById('btnReturnWin').onclick = retMenu;
     }
 
     updateMenuUI() {
         const u = db.users[currentUser];
-        document.getElementById('uiUser').innerText = currentUser; document.getElementById('uiWins').innerText = u.wins;
-        document.getElementById('uiDeaths').innerText = u.deaths; document.getElementById('uiCoins').innerText = u.coins;
+        const setTxt = (id, txt) => { const el = document.getElementById(id); if(el) el.innerText = txt; };
+        setTxt('uiUser', currentUser); setTxt('uiWins', u.wins);
+        setTxt('uiDeaths', u.deaths); setTxt('uiCoins', u.coins);
     }
 
-    toggleSound() { soundEnabled = !soundEnabled; document.getElementById('soundStatus').innerText = soundEnabled?'ON':'OFF'; document.getElementById('pauseSoundStatus').innerText = soundEnabled?'ON':'OFF'; if(soundEnabled) { audioSys.init(); if(this.state === 'MENU') audioSys.startBGM('menu'); } else audioSys.stopBGM(); }
-    setUIState(screenId) { document.querySelectorAll('.screen').forEach(el => el.classList.remove('active')); if (screenId) document.getElementById(screenId).classList.add('active'); }
+    toggleSound() { 
+        soundEnabled = !soundEnabled; 
+        const txt = soundEnabled?'ON':'OFF';
+        document.getElementById('soundStatus').innerText = txt; 
+        document.getElementById('pauseSoundStatus').innerText = txt; 
+        if(soundEnabled) { audioSys.init(); if(this.state === 'MENU') audioSys.startBGM('menu'); } else audioSys.stopBGM(); 
+    }
+    
+    setUIState(screenId) { 
+        document.querySelectorAll('.screen').forEach(el => el.classList.remove('active')); 
+        if (screenId) {
+            const scr = document.getElementById(screenId);
+            if(scr) scr.classList.add('active'); 
+        }
+    }
 
     renderStore() {
         const u = db.users[currentUser]; document.getElementById('storeCoins').innerText = u.coins;
@@ -1105,9 +1286,9 @@ class Game {
         Object.values(WEAPONS).forEach(w => {
             const isUnlocked = u.unlocks.includes(w.id), isSelected = u.selectedWeapon === w.id;
             const div = document.createElement('div'); div.className = `weapon-card ${isUnlocked ? 'unlocked' : ''} ${isSelected ? 'selected' : ''}`;
-            let html = `<h4>${w.name}</h4><p>Daño: ${w.damage} | Munición: ${w.magSize}</p>`;
-            if (isUnlocked) { html += `<p style="color:var(--accent-color)">DESBLOQUEADA</p>`; div.onclick = () => { u.selectedWeapon = w.id; saveDB(); this.renderStore(); }; } 
-            else { html += `<p class="price">Costo: ${w.cost} Cr</p><button class="buy-btn">COMPRAR</button>`; }
+            let html = `<h4>${w.name}</h4><p>Dmg:${w.damage}|Mag:${w.magSize}</p>`;
+            if (isUnlocked) { html += `<p style="color:var(--accent-color); font-size:0.7em;">PROPIEDAD</p>`; div.onclick = () => { u.selectedWeapon = w.id; saveDB(); this.renderStore(); }; } 
+            else { html += `<p class="price" style="font-size:0.7em;">Cost:${w.cost}</p><button class="buy-btn" style="padding:5px; font-size:0.7em;">COMPRAR</button>`; }
             div.innerHTML = html;
             if(!isUnlocked) { div.querySelector('.buy-btn').onclick = (e) => { e.stopPropagation(); if(u.coins >= w.cost) { u.coins -= w.cost; u.unlocks.push(w.id); u.selectedWeapon = w.id; saveDB(); this.renderStore(); } else alert('Créditos insuficientes.'); }; }
             cont.appendChild(div);
@@ -1195,8 +1376,11 @@ class Game {
 
     endRun(isWin) {
         this.state = isWin ? 'VICTORY' : 'GAMEOVER'; const u = db.users[currentUser]; u.coins += this.runCoins; audioSys.stopBGM();
-        if (isWin) { u.wins++; document.getElementById('vicScore').innerText = this.score; document.getElementById('vicCoins').innerText = this.runCoins; this.setUIState('victoryScreen'); } 
-        else { u.deaths++; document.getElementById('goContext').innerText = `Modo: ${this.mode} | ${this.mode==='STORY' ? 'Nivel: '+(this.levelIndex+1) : 'Oleada: '+(this.wave-1)}`; document.getElementById('goScore').innerText = this.score; document.getElementById('goCoins').innerText = this.runCoins; this.setUIState('gameOverScreen'); }
+        
+        const setTxt = (id, txt) => { const el = document.getElementById(id); if(el) el.innerText = txt; };
+
+        if (isWin) { u.wins++; setTxt('vicScore', this.score); setTxt('vicCoins', this.runCoins); this.setUIState('victoryScreen'); } 
+        else { u.deaths++; document.getElementById('goContext').innerText = `Modo:${this.mode}|Lv:${this.mode==='STORY' ? (this.levelIndex+1) : (this.wave-1)}`; setTxt('goScore', this.score); setTxt('goCoins', this.runCoins); this.setUIState('gameOverScreen'); }
         if(this.mode === 'STORY') checkHighscore(currentUser, this.score);
         saveDB(); audioSys.startBGM('menu');
     }
@@ -1218,7 +1402,12 @@ class Game {
         }
 
         this.player.update(dt, this, this.level);
-        this.camera.x = this.player.x - CANVAS_WIDTH / 2; this.camera.y = this.player.y - CANVAS_HEIGHT / 2;
+        
+        // Ajuste de cámara considerando zoom
+        const vw = CANVAS_WIDTH / this.zoomFactor;
+        const vh = CANVAS_HEIGHT / this.zoomFactor;
+        this.camera.x = this.player.x - vw / 2; 
+        this.camera.y = this.player.y - vh / 2;
 
         if(this.mode === 'SURVIVAL') { 
             if(this.enemies.length === 0) { 
@@ -1304,11 +1493,19 @@ class Game {
     }
 
     draw() {
-        this.ctx.fillStyle = '#050508'; this.ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+        // Fondo base negro
+        this.ctx.fillStyle = '#000'; this.ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+        
         if (this.state === 'LOGIN' || this.state === 'MENU' || this.state === 'STORE') return;
 
         this.ctx.save();
+        
+        // Aplicar Zoom (Mundo)
+        this.ctx.scale(this.zoomFactor, this.zoomFactor);
+
         if (this.shakeTime > 0) this.ctx.translate((Math.random()-0.5)*this.shakeMagnitude, (Math.random()-0.5)*this.shakeMagnitude);
+        
+        // Traducir cámara (coordenadas lógicas / zoom)
         this.ctx.translate(-this.camera.x, -this.camera.y);
 
         if (this.level) this.level.draw(this.ctx, this.camera);
@@ -1330,51 +1527,88 @@ class Game {
         if (this.player.active) this.player.draw(this.ctx);
         this.dmgTexts.forEach(t => t.draw(this.ctx));
 
-        this.ctx.restore();
+        this.ctx.restore(); // Restaurar escala del mundo
 
-        if (this.state === 'PLAYING' || this.state === 'PAUSED') { this.drawHUD(); this.drawMinimap(); }
+        // Dibujar HUD (encima de todo, escalado manualmente)
+        if (this.state === 'PLAYING' || this.state === 'PAUSED') { 
+            this.drawHUD(); 
+            this.drawMinimap(); 
+        }
+        
         if (this.state === 'PAUSED') { this.ctx.fillStyle = 'rgba(0,0,0,0.5)'; this.ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT); }
     }
 
     drawHUD() {
-        const ctx = this.ctx; ctx.fillStyle = 'rgba(0, 0, 0, 0.8)'; ctx.fillRect(10, 10, 260, 120);
+        const ctx = this.ctx;
+        const s = this.zoomFactor; // Factor de escala para elementos HUD
         
-        ctx.fillStyle = '#fff'; ctx.font = '14px Courier New'; ctx.fillText(`HP: ${Math.ceil(this.player.hp)}/${this.player.maxHp}`, 20, 30);
-        ctx.fillStyle = '#550000'; ctx.fillRect(20, 40, 200, 10); ctx.fillStyle = '#00ffcc'; ctx.fillRect(20, 40, 200 * (Math.max(0, this.player.hp) / this.player.maxHp), 10);
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.8)'; 
+        // Fondo HUD escalado
+        ctx.fillRect(10*s, 10*s, 220*s, 110*s);
+        
+        ctx.fillStyle = '#fff'; ctx.font = `${12*s}px Courier New`; 
+        ctx.fillText(`HP: ${Math.ceil(this.player.hp)}/${this.player.maxHp}`, 20*s, 25*s);
+        
+        // Barras escaladas
+        ctx.fillStyle = '#550000'; ctx.fillRect(20*s, 35*s, 180*s, 8*s); 
+        ctx.fillStyle = '#00ffcc'; ctx.fillRect(20*s, 35*s, 180*s * (Math.max(0, this.player.hp) / this.player.maxHp), 8*s);
 
-        ctx.fillStyle = '#fff'; ctx.fillText(`DASH`, 20, 70); ctx.fillStyle = '#333'; ctx.fillRect(60, 60, 50, 10);
-        if(this.player.dashCooldownTimer <= 0) { ctx.fillStyle = '#0f0'; ctx.fillRect(60, 60, 50, 10); } 
-        else { ctx.fillStyle = '#f00'; ctx.fillRect(60, 60, 50 * (1 - this.player.dashCooldownTimer/this.player.dashCooldown), 10); }
+        ctx.fillStyle = '#fff'; ctx.fillText(`DASH`, 20*s, 60*s); 
+        ctx.fillStyle = '#333'; ctx.fillRect(60*s, 52*s, 40*s, 8*s);
+        if(this.player.dashCooldownTimer <= 0) { ctx.fillStyle = '#0f0'; ctx.fillRect(60*s, 52*s, 40*s, 8*s); } 
+        else { ctx.fillStyle = '#f00'; ctx.fillRect(60*s, 52*s, 40*s * (1 - this.player.dashCooldownTimer/this.player.dashCooldown), 8*s); }
         
-        ctx.fillStyle = '#fff'; ctx.fillText(`AMMO: ${this.player.weapon.ammo}/${this.player.weapon.config.magSize}`, 20, 100);
-        ctx.fillStyle = '#333'; ctx.fillRect(20, 110, 200, 10);
+        ctx.fillStyle = '#fff'; ctx.fillText(`AMMO: ${this.player.weapon.ammo}/${this.player.weapon.config.magSize}`, 20*s, 85*s);
+        ctx.fillStyle = '#333'; ctx.fillRect(20*s, 95*s, 180*s, 8*s);
         if(this.player.weapon.reloading) {
             let prog = this.player.weapon.reloadTimer / this.player.weapon.config.reloadTime;
-            ctx.fillStyle = '#ffaa00'; ctx.fillRect(20 + 200*0.5, 110, 200*0.15, 10); 
-            ctx.fillStyle = '#fff'; ctx.fillRect(20 + 200*prog, 105, 4, 20); 
-        } else { ctx.fillStyle = '#00ffcc'; ctx.fillRect(20, 110, 200 * (this.player.weapon.ammo / this.player.weapon.config.magSize), 10); }
+            ctx.fillStyle = '#ffaa00'; ctx.fillRect((20 + 180*0.5)*s, 95*s, (180*0.15)*s, 8*s); 
+            ctx.fillStyle = '#fff'; ctx.fillRect((20 + 180*prog)*s, 90*s, 3*s, 18*s); 
+        } else { ctx.fillStyle = '#00ffcc'; ctx.fillRect(20*s, 95*s, 180*s * (this.player.weapon.ammo / this.player.weapon.config.magSize), 8*s); }
 
-        ctx.fillStyle = 'var(--gold-color)'; ctx.fillText(`Créditos: ${this.runCoins}`, 130, 70);
-        ctx.textAlign = 'right'; ctx.font = '20px Courier New';
-        if(this.mode === 'STORY') { ctx.fillStyle = '#00ffcc'; ctx.fillText(`Nivel: ${this.levelIndex + 1}/${this.targetLevels}`, CANVAS_WIDTH - 20, 40); ctx.fillStyle = '#fff'; ctx.fillText(`Puntos: ${this.score}`, CANVAS_WIDTH - 20, 70); } 
-        else { ctx.fillStyle = '#ff0055'; ctx.fillText(`Oleada: ${this.wave - 1}`, CANVAS_WIDTH - 20, 40); if(this.enemies.length === 0 && this.waveTimer > 0) { ctx.fillStyle = '#fff'; ctx.fillText(`Siguiente en: ${Math.ceil(this.waveTimer)}s`, CANVAS_WIDTH - 20, 70); } }
+        ctx.fillStyle = 'var(--gold-color)'; ctx.fillText(`Cr:${this.runCoins}`, 120*s, 60*s);
+        
+        // Textos derecha escalados
+        ctx.textAlign = 'right'; ctx.font = `${16*s}px Courier New`;
+        if(this.mode === 'STORY') { 
+            ctx.fillStyle = '#00ffcc'; ctx.fillText(`Lv:${this.levelIndex + 1}/${this.targetLevels}`, (CANVAS_WIDTH - 15)*s, 25*s); 
+            ctx.fillStyle = '#fff'; ctx.fillText(`Pts:${this.score}`, (CANVAS_WIDTH - 15)*s, 50*s); 
+        } else { 
+            ctx.fillStyle = '#ff0055'; ctx.fillText(`Wave:${this.wave - 1}`, (CANVAS_WIDTH - 15)*s, 25*s); 
+            if(this.enemies.length === 0 && this.waveTimer > 0) { 
+                ctx.fillStyle = '#fff'; ctx.fillText(`Next:${Math.ceil(this.waveTimer)}s`, (CANVAS_WIDTH - 15)*s, 50*s); 
+            } 
+        }
         ctx.textAlign = 'left';
     }
 
     drawMinimap() {
         if(!this.level) return;
-        const ctx = this.ctx, size = 150, scale = size / (this.level.cols * this.level.tileSize), mapX = CANVAS_WIDTH - size - 20, mapY = CANVAS_HEIGHT - size - 20;
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.5)'; ctx.fillRect(mapX, mapY, size, size); ctx.strokeStyle = '#00ffcc'; ctx.strokeRect(mapX, mapY, size, size);
+        const ctx = this.ctx;
+        const s = this.zoomFactor;
+        // Minimapa no se escala por zoomFactor, se mantiene en esquina inferior escalado por CSS
+        const size = 120 * s; 
+        const scale = size / (this.level.cols * this.level.tileSize); 
+        const mapX = CANVAS_WIDTH - size - 15*s; 
+        const mapY = CANVAS_HEIGHT - size - 15*s;
+        
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.5)'; ctx.fillRect(mapX, mapY, size, size); 
+        ctx.strokeStyle = '#00ffcc'; ctx.lineWidth = 1*s; ctx.strokeRect(mapX, mapY, size, size);
+
+        ctx.save();
+        ctx.beginPath(); ctx.rect(mapX, mapY, size, size); ctx.clip(); // Clip para no salir del recuadro
 
         for (let y = 0; y < this.level.rows; y++) {
             for (let x = 0; x < this.level.cols; x++) {
                 if (this.level.grid[y][x] === 1) { ctx.fillStyle = 'rgba(50, 50, 70, 0.8)'; ctx.fillRect(mapX + x * this.level.tileSize * scale, mapY + y * this.level.tileSize * scale, this.level.tileSize * scale, this.level.tileSize * scale); }
             }
         }
-        if(this.portal) { ctx.fillStyle = '#ff00ff'; ctx.beginPath(); ctx.arc(mapX + this.portal.x * scale, mapY + this.portal.y * scale, 3, 0, Math.PI*2); ctx.fill(); }
-        this.items.forEach(item => { ctx.fillStyle = item.type === 'coin' ? '#ffd700' : '#0f0'; ctx.beginPath(); ctx.arc(mapX + item.x * scale, mapY + item.y * scale, 1.5, 0, Math.PI*2); ctx.fill(); });
-        this.enemies.forEach(e => { ctx.fillStyle = '#ff0000'; ctx.beginPath(); ctx.arc(mapX + e.x * scale, mapY + e.y * scale, 2, 0, Math.PI*2); ctx.fill(); });
-        ctx.fillStyle = '#00ffcc'; ctx.beginPath(); ctx.arc(mapX + this.player.x * scale, mapY + this.player.y * scale, 3, 0, Math.PI*2); ctx.fill();
+        if(this.portal) { ctx.fillStyle = '#ff00ff'; ctx.beginPath(); ctx.arc(mapX + this.portal.x * scale, mapY + this.portal.y * scale, 2*s, 0, Math.PI*2); ctx.fill(); }
+        this.items.forEach(item => { ctx.fillStyle = item.type === 'coin' ? '#ffd700' : '#0f0'; ctx.beginPath(); ctx.arc(mapX + item.x * scale, mapY + item.y * scale, 1*s, 0, Math.PI*2); ctx.fill(); });
+        this.enemies.forEach(e => { ctx.fillStyle = '#ff0000'; ctx.beginPath(); ctx.arc(mapX + e.x * scale, mapY + e.y * scale, 1.5*s, 0, Math.PI*2); ctx.fill(); });
+        ctx.fillStyle = '#00ffcc'; ctx.beginPath(); ctx.arc(mapX + this.player.x * scale, mapY + this.player.y * scale, 2*s, 0, Math.PI*2); ctx.fill();
+        
+        ctx.restore();
     }
 
     loop(timestamp) {
