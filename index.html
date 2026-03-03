@@ -38,7 +38,7 @@
         body.mobile-mode #topScreen { flex: 0 0 50vh; width: 100%; border-bottom: 4px solid #333; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
 
         #gameContainer { position: relative; width: 100%; height: 100%; }
-        canvas { display: block; width: 100%; height: 100%; object-fit: contain; }
+        canvas { display: block; width: 100%; height: 100%; object-fit: contain; image-rendering: pixelated; }
 
         #uiLayer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; display: flex; justify-content: center; align-items: center; z-index: 20; }
         
@@ -234,38 +234,175 @@
 <script>
 const CANVAS_WIDTH = 1024, CANVAS_HEIGHT = 768, TILE_SIZE = 64;
 
+const SPRITE_DATA = {
+    player: [
+        "      0000      ",
+        "    00333300    ",
+        "   0333333330   ",
+        "  033333333330  ",
+        "  011111111110  ",
+        " 01100000000110 ",
+        " 01022222222010 ",
+        " 01022222222010 ",
+        " 01022222222010 ",
+        " 01100000000110 ",
+        " 01111111111110 ",
+        "  011111111110  ",
+        "  001110011100  ",
+        "   0111001110   ",
+        "   0000  0000   ",
+        "                "
+    ],
+    player_dead: [
+        "                ",
+        "                ",
+        "       0000     ",
+        "     00111100   ",
+        "    030122220   ",
+        "   0330112220   ",
+        "   0330111110   ",
+        "    030111100   ",
+        "     0011110    ",
+        "      011110    ",
+        "     01100110   ",
+        "    0110  0110  ",
+        "    000    000  ",
+        "                ",
+        "                ",
+        "                "
+    ],
+    enemy_basic: [
+        "    00    00    ",
+        "   0550  0550   ",
+        "  055550055550  ",
+        "  055555555550  ",
+        " 05505555550550 ",
+        " 05505555550550 ",
+        " 05555555555550 ",
+        " 05500000000550 ",
+        "  050555555050  ",
+        "  055000000550  ",
+        "   0555555550   ",
+        "   0055555500   ",
+        "  055000000550  ",
+        " 05550    05550 ",
+        " 0000      0000 ",
+        "                "
+    ],
+    crate: [
+        "  000000000000  ",
+        " 06666666666660 ",
+        " 06066666666060 ",
+        " 06606666660660 ",
+        " 06660666606660 ",
+        " 06666066066660 ",
+        " 06666600666660 ",
+        " 06666600666660 ",
+        " 06666066066660 ",
+        " 06660666606660 ",
+        " 06606666660660 ",
+        " 06066666666060 ",
+        " 06666666666660 ",
+        "  000000000000  ",
+        "                ",
+        "                "
+    ],
+    heal: [
+        "  000000000000  ",
+        " 04444444444440 ",
+        " 04444000044440 ",
+        " 04444077044440 ",
+        " 04400077000440 ",
+        " 04407777770440 ",
+        " 04407777770440 ",
+        " 04400077000440 ",
+        " 04444077044440 ",
+        " 04444000044440 ",
+        " 04444444444440 ",
+        "  000000000000  ",
+        "                ",
+        "                ",
+        "                ",
+        "                "
+    ],
+    coin: [
+        "                ",
+        "      0000      ",
+        "    00888800    ",
+        "   0888888880   ",
+        "  088800008880  ",
+        " 08880888808880 ",
+        " 08880888808880 ",
+        " 08880888808880 ",
+        " 08880888808880 ",
+        "  088800008880  ",
+        "   0888888880   ",
+        "    00888800    ",
+        "      0000      ",
+        "                ",
+        "                ",
+        "                "
+    ]
+};
+
+const SPRITE_COLORS = {
+    '0': '#000000', '1': '#fa7014', '2': '#00ffff', '3': '#8b5a2b', 
+    '4': '#dddddd', '5': '#e60033', '6': '#a05a2c', '7': '#00ff00', '8': '#ffd700'
+};
+
+window.renderedSprites = {};
+function initSprites() {
+    for(let key in SPRITE_DATA) {
+        let data = SPRITE_DATA[key];
+        let canvas = document.createElement('canvas');
+        canvas.width = data[0].length;
+        canvas.height = data.length;
+        let ctx = canvas.getContext('2d');
+        for(let y=0; y<data.length; y++) {
+            for(let x=0; x<data[y].length; x++) {
+                let c = data[y][x];
+                if(c !== ' ') {
+                    ctx.fillStyle = SPRITE_COLORS[c];
+                    ctx.fillRect(x, y, 1, 1);
+                }
+            }
+        }
+        window.renderedSprites[key] = canvas;
+    }
+}
+
 const WEAPONS = {
-    w1: { id: 'w1', name: 'Pistola Básica', damage: 8, cost: 0, fireRate: 350, speed: 600, spread: 0.04, auto: false, color: '#aaa', magSize: 12, reloadTime: 1.2, type: 'pistol' },
-    w2: { id: 'w2', name: 'Revólver', damage: 15, cost: 100, fireRate: 400, speed: 700, spread: 0.02, auto: false, color: '#0f0', magSize: 6, reloadTime: 1.5, type: 'pistol' },
-    w3: { id: 'w3', name: 'Subfusil', damage: 5, cost: 200, fireRate: 100, speed: 700, spread: 0.1, auto: true, color: '#0ff', magSize: 30, reloadTime: 1.8, type: 'rifle' },
-    w4: { id: 'w4', name: 'Escopeta Ligera', damage: 6, cost: 350, fireRate: 900, speed: 500, spread: 0.3, auto: false, color: '#ffaa00', magSize: 4, reloadTime: 2.0, type: 'shotgun', bullets: 5 },
-    w5: { id: 'w5', name: 'Rifle de Asalto', damage: 10, cost: 500, fireRate: 150, speed: 800, spread: 0.08, auto: true, color: '#f0f', magSize: 40, reloadTime: 2.2, type: 'rifle' },
-    w6: { id: 'w6', name: 'Cañón de Iones', damage: 25, cost: 700, fireRate: 500, speed: 900, spread: 0.01, auto: false, color: '#00ffcc', magSize: 8, reloadTime: 2.5, type: 'rifle' },
-    w7: { id: 'w7', name: 'Láser Táctico', damage: 3, cost: 900, fireRate: 40, speed: 1200, spread: 0.02, auto: true, color: '#0f0', magSize: 100, reloadTime: 2.0, type: 'laser' },
-    w8: { id: 'w8', name: 'Francotirador', damage: 40, cost: 1200, fireRate: 1200, speed: 1500, spread: 0.005, auto: false, color: '#ff5500', magSize: 5, reloadTime: 2.8, type: 'sniper' },
-    w9: { id: 'w9', name: 'Lanzagranadas', damage: 30, cost: 1500, fireRate: 1000, speed: 450, spread: 0.1, auto: false, color: '#aa00ff', magSize: 4, reloadTime: 3.0, type: 'grenade', explosive: true, radius: 80 },
-    w10: { id: 'w10', name: 'Escopeta Pesada', damage: 8, cost: 1800, fireRate: 1100, speed: 550, spread: 0.35, auto: false, color: '#f00', magSize: 6, reloadTime: 2.5, type: 'shotgun', bullets: 7 },
-    w11: { id: 'w11', name: 'Ametralladora', damage: 8, cost: 2200, fireRate: 80, speed: 850, spread: 0.12, auto: true, color: '#ffaa00', magSize: 80, reloadTime: 3.5, type: 'rifle' },
-    w12: { id: 'w12', name: 'Rifle de Plasma', damage: 15, cost: 2600, fireRate: 130, speed: 1000, spread: 0.05, auto: true, color: '#00ffcc', magSize: 50, reloadTime: 2.0, type: 'rifle' },
-    w13: { id: 'w13', name: 'Emisor de Ondas', damage: 5, cost: 3000, fireRate: 800, speed: 600, spread: 0.4, auto: false, color: '#00aaff', magSize: 10, reloadTime: 2.5, type: 'shotgun', bullets: 10 },
-    w14: { id: 'w14', name: 'Arco Eléctrico', damage: 20, cost: 3500, fireRate: 200, speed: 1500, spread: 0.01, auto: true, color: '#ffff00', magSize: 30, reloadTime: 2.2, type: 'laser' },
-    w15: { id: 'w15', name: 'Cañón Gauss', damage: 60, cost: 4000, fireRate: 1500, speed: 2000, spread: 0, auto: false, color: '#ff0055', magSize: 3, reloadTime: 3.0, type: 'sniper' },
-    w16: { id: 'w16', name: 'Lanza Misiles', damage: 50, cost: 4500, fireRate: 1200, speed: 500, spread: 0.05, auto: false, color: '#ff0000', magSize: 4, reloadTime: 3.5, type: 'grenade', explosive: true, radius: 100 },
-    w17: { id: 'w17', name: 'Láser Pesado', damage: 6, cost: 5000, fireRate: 30, speed: 1200, spread: 0.01, auto: true, color: '#ff00ff', magSize: 200, reloadTime: 3.0, type: 'laser' },
-    w18: { id: 'w18', name: 'Desintegrador', damage: 35, cost: 6000, fireRate: 300, speed: 1100, spread: 0.02, auto: true, color: '#00ff00', magSize: 40, reloadTime: 2.5, type: 'rifle' },
-    w19: { id: 'w19', name: 'Materia Oscura', damage: 100, cost: 10000, fireRate: 1500, speed: 600, spread: 0, auto: false, color: '#330066', magSize: 2, reloadTime: 4.0, type: 'grenade', explosive: true, radius: 150 },
-    w20: { id: 'w20', name: 'Rayo de la Muerte', damage: 150, cost: 15000, fireRate: 1500, speed: 3000, spread: 0, auto: false, color: '#ffffff', magSize: 3, reloadTime: 3.5, type: 'sniper' },
-    w21: { id: 'w21', name: 'Aniquilador Supremo', damage: 300, cost: 25000, fireRate: 2000, speed: 800, spread: 0, auto: false, color: '#ff0000', magSize: 1, reloadTime: 5.0, type: 'grenade', explosive: true, radius: 250 }
+    w1: { id: 'w1', name: 'Pistola Básica', damage: 8, cost: 0, fireRate: 350, speed: 600, spread: 0.04, auto: false, color: '#00ffff', magSize: 12, reloadTime: 1.2, type: 'pistol' },
+    w2: { id: 'w2', name: 'Revólver', damage: 15, cost: 100, fireRate: 400, speed: 700, spread: 0.02, auto: false, color: '#00ffff', magSize: 6, reloadTime: 1.5, type: 'pistol' },
+    w3: { id: 'w3', name: 'Subfusil', damage: 5, cost: 200, fireRate: 100, speed: 700, spread: 0.1, auto: true, color: '#00ffff', magSize: 30, reloadTime: 1.8, type: 'rifle' },
+    w4: { id: 'w4', name: 'Escopeta Ligera', damage: 6, cost: 350, fireRate: 900, speed: 500, spread: 0.3, auto: false, color: '#00ffff', magSize: 4, reloadTime: 2.0, type: 'shotgun', bullets: 5 },
+    w5: { id: 'w5', name: 'Rifle de Asalto', damage: 10, cost: 500, fireRate: 150, speed: 800, spread: 0.08, auto: true, color: '#00ffff', magSize: 40, reloadTime: 2.2, type: 'rifle' },
+    w6: { id: 'w6', name: 'Cañón de Iones', damage: 25, cost: 700, fireRate: 500, speed: 900, spread: 0.01, auto: false, color: '#00ffff', magSize: 8, reloadTime: 2.5, type: 'rifle' },
+    w7: { id: 'w7', name: 'Láser Táctico', damage: 3, cost: 900, fireRate: 40, speed: 1200, spread: 0.02, auto: true, color: '#00ffff', magSize: 100, reloadTime: 2.0, type: 'laser' },
+    w8: { id: 'w8', name: 'Francotirador', damage: 40, cost: 1200, fireRate: 1200, speed: 1500, spread: 0.005, auto: false, color: '#00ffff', magSize: 5, reloadTime: 2.8, type: 'sniper' },
+    w9: { id: 'w9', name: 'Lanzagranadas', damage: 30, cost: 1500, fireRate: 1000, speed: 450, spread: 0.1, auto: false, color: '#00ffff', magSize: 4, reloadTime: 3.0, type: 'grenade', explosive: true, radius: 80 },
+    w10: { id: 'w10', name: 'Escopeta Pesada', damage: 8, cost: 1800, fireRate: 1100, speed: 550, spread: 0.35, auto: false, color: '#00ffff', magSize: 6, reloadTime: 2.5, type: 'shotgun', bullets: 7 },
+    w11: { id: 'w11', name: 'Ametralladora', damage: 8, cost: 2200, fireRate: 80, speed: 850, spread: 0.12, auto: true, color: '#00ffff', magSize: 80, reloadTime: 3.5, type: 'rifle' },
+    w12: { id: 'w12', name: 'Rifle de Plasma', damage: 15, cost: 2600, fireRate: 130, speed: 1000, spread: 0.05, auto: true, color: '#00ffff', magSize: 50, reloadTime: 2.0, type: 'rifle' },
+    w13: { id: 'w13', name: 'Emisor de Ondas', damage: 5, cost: 3000, fireRate: 800, speed: 600, spread: 0.4, auto: false, color: '#00ffff', magSize: 10, reloadTime: 2.5, type: 'shotgun', bullets: 10 },
+    w14: { id: 'w14', name: 'Arco Eléctrico', damage: 20, cost: 3500, fireRate: 200, speed: 1500, spread: 0.01, auto: true, color: '#00ffff', magSize: 30, reloadTime: 2.2, type: 'laser' },
+    w15: { id: 'w15', name: 'Cañón Gauss', damage: 60, cost: 4000, fireRate: 1500, speed: 2000, spread: 0, auto: false, color: '#00ffff', magSize: 3, reloadTime: 3.0, type: 'sniper' },
+    w16: { id: 'w16', name: 'Lanza Misiles', damage: 50, cost: 4500, fireRate: 1200, speed: 500, spread: 0.05, auto: false, color: '#00ffff', magSize: 4, reloadTime: 3.5, type: 'grenade', explosive: true, radius: 100 },
+    w17: { id: 'w17', name: 'Láser Pesado', damage: 6, cost: 5000, fireRate: 30, speed: 1200, spread: 0.01, auto: true, color: '#00ffff', magSize: 200, reloadTime: 3.0, type: 'laser' },
+    w18: { id: 'w18', name: 'Desintegrador', damage: 35, cost: 6000, fireRate: 300, speed: 1100, spread: 0.02, auto: true, color: '#00ffff', magSize: 40, reloadTime: 2.5, type: 'rifle' },
+    w19: { id: 'w19', name: 'Materia Oscura', damage: 100, cost: 10000, fireRate: 1500, speed: 600, spread: 0, auto: false, color: '#00ffff', magSize: 2, reloadTime: 4.0, type: 'grenade', explosive: true, radius: 150 },
+    w20: { id: 'w20', name: 'Rayo de la Muerte', damage: 150, cost: 15000, fireRate: 1500, speed: 3000, spread: 0, auto: false, color: '#00ffff', magSize: 3, reloadTime: 3.5, type: 'sniper' },
+    w21: { id: 'w21', name: 'Aniquilador Supremo', damage: 300, cost: 25000, fireRate: 2000, speed: 800, spread: 0, auto: false, color: '#00ffff', magSize: 1, reloadTime: 5.0, type: 'grenade', explosive: true, radius: 250 }
 };
 
 const ENEMY_CONFIGS = {
-    basic: { color: '#ff4444', hp: 20, speed: 80, damage: 10, radius: 15, type: 'melee' },
-    fast:  { color: '#ffaa00', hp: 12, speed: 150, damage: 6, radius: 12, type: 'melee' },
-    tank:  { color: '#aa0000', hp: 50, speed: 40, damage: 15, radius: 18, type: 'ranged' },
-    summoner: { color: '#8800ff', hp: 40, speed: 50, damage: 5, radius: 16, type: 'summoner' },
-    healer: { color: '#00ff88', hp: 30, speed: 70, damage: 5, radius: 14, type: 'healer' },
-    shielded: { color: '#0088ff', hp: 35, speed: 60, damage: 12, radius: 18, type: 'shielded' },
-    boss:  { color: '#ff00ff', hp: 1000, speed: 90, damage: 20, radius: 25, type: 'boss' }
+    basic: { hp: 20, speed: 80, damage: 10, radius: 15, type: 'melee' },
+    fast:  { hp: 12, speed: 150, damage: 6, radius: 12, type: 'melee' },
+    tank:  { hp: 50, speed: 40, damage: 15, radius: 18, type: 'ranged' },
+    summoner: { hp: 40, speed: 50, damage: 5, radius: 16, type: 'summoner' },
+    healer: { hp: 30, speed: 70, damage: 5, radius: 14, type: 'healer' },
+    shielded: { hp: 35, speed: 60, damage: 12, radius: 18, type: 'shielded' },
+    boss:  { hp: 1000, speed: 90, damage: 20, radius: 30, type: 'boss' }
 };
 
 const MUTATIONS = [
@@ -483,15 +620,18 @@ class Level {
                 const s = this.tileSize;
                 
                 if (this.grid[y][x] === 1) {
-                    ctx.fillStyle = '#1c1c24'; 
+                    ctx.fillStyle = '#0a0a1a'; 
                     ctx.fillRect(rx, ry, s, s);
-                    ctx.fillStyle = '#0a0a10'; 
-                    ctx.fillRect(rx, ry + s - 10, s, 10);
-                    ctx.strokeStyle = '#00ffcc';
-                    ctx.lineWidth = 1;
-                    ctx.strokeRect(rx, ry, s, s);
+                    
+                    ctx.strokeStyle = '#9900ff';
+                    ctx.lineWidth = 4;
+                    ctx.strokeRect(rx+2, ry+2, s-4, s-4);
+                    
+                    ctx.strokeStyle = '#00ffff';
+                    ctx.lineWidth = 2;
+                    ctx.strokeRect(rx+6, ry+6, s-12, s-12);
                 } else {
-                    ctx.fillStyle = '#111115'; 
+                    ctx.fillStyle = ((x+y)%2===0) ? '#1a1a24' : '#1e1e28'; 
                     ctx.fillRect(rx, ry, s, s);
                 }
             }
@@ -556,12 +696,10 @@ class Prop {
             ctx.fillStyle = '#aa2222'; ctx.beginPath(); ctx.arc(this.x, this.y, this.radius, 0, Math.PI*2); ctx.fill();
             ctx.fillStyle = '#ff5500'; ctx.beginPath(); ctx.arc(this.x, this.y, this.radius*0.6, 0, Math.PI*2); ctx.fill();
         } else if(this.type === 'cover') {
-            ctx.fillStyle = '#8B4513'; ctx.fillRect(this.x-15, this.y-15, 30, 30);
-            ctx.fillStyle = '#888';
-            ctx.fillRect(this.x-15, this.y-10, 30, 4);
-            ctx.fillRect(this.x-15, this.y-2, 30, 4);
-            ctx.fillRect(this.x-15, this.y+6, 30, 4);
-            ctx.fillStyle = `rgba(0,0,0, ${1 - this.hp/this.maxHp})`; ctx.fillRect(this.x-15, this.y-15, 30, 30);
+            if(window.renderedSprites.crate) {
+                ctx.drawImage(window.renderedSprites.crate, this.x - this.radius*1.5, this.y - this.radius*1.5, this.radius*3, this.radius*3);
+                ctx.fillStyle = `rgba(0,0,0, ${1 - this.hp/this.maxHp})`; ctx.fillRect(this.x-15, this.y-15, 30, 30);
+            }
         } else if(this.type === 'trap') {
             ctx.fillStyle = '#222'; ctx.fillRect(this.x-15, this.y-15, 30, 30);
             if(this.state === 1) { ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(this.x, this.y, 8, 0, Math.PI*2); ctx.fill(); }
@@ -626,8 +764,8 @@ class Weapon {
     }
     draw(ctx, px, py, angle) {
         ctx.save(); ctx.translate(px, py); ctx.rotate(angle);
-        ctx.translate(6, 8);
-        ctx.fillStyle = this.config.color;
+        ctx.translate(10, 8);
+        ctx.fillStyle = '#dddddd';
         if(this.config.type === 'pistol') ctx.fillRect(0, -3, 12, 6);
         else if(this.config.type === 'shotgun') { ctx.fillRect(0, -5, 18, 4); ctx.fillRect(0, 1, 18, 4); }
         else if(this.config.type === 'rifle' || this.config.type === 'laser') ctx.fillRect(0, -2, 25, 4);
@@ -726,7 +864,7 @@ class Player {
         this.isDashing = false; this.dashTimer = 0; this.dashCooldown = 1.5; this.dashCooldownTimer = 0;
         this.invulnerableTimer = 0; this.angle = 0;
         this.dmgMult = 1.0; this.defenseMult = 1.0; this.bounceCount = 0;
-        this.mutations = [];
+        this.mutations = []; this.deadTimer = 0;
     }
     update(dt, game, level) {
         if (this.dashCooldownTimer > 0) this.dashCooldownTimer -= dt;
@@ -789,10 +927,22 @@ class Player {
         if (this.hp <= 0) { this.hp = 0; this.active = false; }
     }
     draw(ctx) {
-        ctx.fillStyle = (this.invulnerableTimer > 0 && Math.floor(this.invulnerableTimer * 20) % 2 === 0) ? '#fff' : '#00ffcc';
-        ctx.beginPath(); ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2); ctx.fill();
-        ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(this.x, this.y, this.radius*0.4, 0, Math.PI*2); ctx.fill();
-        this.weapon.draw(ctx, this.x, this.y, this.angle);
+        ctx.save();
+        ctx.translate(this.x, this.y);
+        
+        if (!this.active) {
+            if(window.renderedSprites.player_dead) ctx.drawImage(window.renderedSprites.player_dead, -this.radius*1.5, -this.radius*1.5, this.radius*3, this.radius*3);
+        } else {
+            ctx.rotate(this.angle);
+            if (this.invulnerableTimer > 0 && Math.floor(this.invulnerableTimer * 20) % 2 === 0) {
+                ctx.globalAlpha = 0.5;
+            }
+            if(window.renderedSprites.player) ctx.drawImage(window.renderedSprites.player, -this.radius*1.5, -this.radius*1.5, this.radius*3, this.radius*3);
+            ctx.restore();
+            this.weapon.draw(ctx, this.x, this.y, this.angle);
+            return; 
+        }
+        ctx.restore();
     }
 }
 
@@ -803,7 +953,7 @@ class Enemy {
         const conf = ENEMY_CONFIGS[type];
         this.radius = conf.radius; this.maxHp = Math.floor(conf.hp * scale); this.hp = this.maxHp;
         this.speed = conf.speed * (1 + (scale-1)*0.1); this.damage = Math.floor(conf.damage * scale); 
-        this.color = conf.color; this.eType = conf.type;
+        this.eType = conf.type;
         this.flashTimer = 0; this.actionTimer = 0;
 
         this.aggro = (type === 'boss' || summoned);
@@ -843,7 +993,7 @@ class Enemy {
 
         if (this.type === 'boss') {
             if(this.hp < this.maxHp/2 && !this.phase2) {
-                this.phase2 = true; this.speed *= 1.5; this.weapon.config.fireRate *= 0.6; this.color = '#ff0000';
+                this.phase2 = true; this.speed *= 1.5; this.weapon.config.fireRate *= 0.6;
                 game.spawnParticles(this.x, this.y, '#f00', 50); audioSys.sfxBossSpawn();
             }
             if (this.bossState === 'MOVE') {
@@ -978,7 +1128,7 @@ class Enemy {
                     game.score += randInt(1, 6);
                 }
             }
-            game.spawnParticles(this.x, this.y, this.color, this.radius);
+            game.spawnParticles(this.x, this.y, '#e60033', this.radius);
             let dropRate = game.mode === 'SURVIVAL' ? 0.05 : 0.15;
             if (this.type === 'boss') for(let i=0; i<15; i++) game.items.push(new Item('coin', this.x + randRange(-30,30), this.y + randRange(-30,30)));
             else if (Math.random() < dropRate) game.items.push(new Item('coin', this.x, this.y));
@@ -986,28 +1136,16 @@ class Enemy {
         }
     }
     draw(ctx) {
-        ctx.fillStyle = this.flashTimer > 0 ? '#fff' : this.color;
-        ctx.beginPath(); ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2); ctx.fill();
-        ctx.fillStyle = '#000'; ctx.beginPath(); ctx.arc(this.x, this.y, this.radius*0.3, 0, Math.PI*2); ctx.fill();
-        
         ctx.save();
         ctx.translate(this.x, this.y);
         let rot = this.aggro ? Math.atan2(window.gameInstance.player.y - this.y, window.gameInstance.player.x - this.x) : this.wanderAngle;
         ctx.rotate(rot);
-        if (this.eType === 'melee') {
-            ctx.fillStyle = '#fff';
-            ctx.fillRect(8, 4, 18, 3);
-        } else if (this.eType === 'ranged' || this.type === 'boss') {
-            ctx.fillStyle = '#555';
-            ctx.fillRect(8, 4, 22, 5);
-            ctx.fillStyle = '#0ff';
-            ctx.fillRect(26, 5, 4, 3);
-        } else if (this.eType === 'summoner' || this.eType === 'healer') {
-            ctx.fillStyle = '#a0f';
-            ctx.fillRect(8, 4, 15, 3);
-            ctx.fillStyle = '#fff';
-            ctx.beginPath(); ctx.arc(23, 5, 4, 0, Math.PI*2); ctx.fill();
-        }
+        
+        if (this.flashTimer > 0) ctx.globalAlpha = 0.5;
+        
+        let sc = this.type === 'boss' ? this.radius*3 : this.radius*2.5;
+        if(window.renderedSprites.enemy_basic) ctx.drawImage(window.renderedSprites.enemy_basic, -sc/2, -sc/2, sc, sc);
+        
         ctx.restore();
 
         if(this.eType === 'shielded') {
@@ -1015,7 +1153,6 @@ class Enemy {
             ctx.arc(this.x, this.y, this.radius+4, -Math.PI/2, Math.PI/2); ctx.stroke();
         }
         if (this.type === 'boss') {
-            ctx.fillStyle = '#ffd700'; ctx.beginPath(); ctx.moveTo(this.x-12, this.y-this.radius+2); ctx.lineTo(this.x-16, this.y-this.radius-12); ctx.lineTo(this.x-4, this.y-this.radius-4); ctx.lineTo(this.x, this.y-this.radius-16); ctx.lineTo(this.x+4, this.y-this.radius-4); ctx.lineTo(this.x+16, this.y-this.radius-12); ctx.lineTo(this.x+12, this.y-this.radius+2); ctx.fill();
             if (this.bossState === 'AIM') { ctx.strokeStyle = 'rgba(255, 0, 0, 0.5)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(this.x, this.y); ctx.lineTo(this.x + Math.cos(this.bossAimAngle)*1500, this.y + Math.sin(this.bossAimAngle)*1500); ctx.stroke(); }
         }
         if(this.hp < this.maxHp) { ctx.fillStyle = '#f00'; ctx.fillRect(this.x - 15, this.y - this.radius - 8, 30, 4); ctx.fillStyle = '#0f0'; ctx.fillRect(this.x - 15, this.y - this.radius - 8, 30 * (this.hp/this.maxHp), 4); }
@@ -1028,9 +1165,8 @@ class Item {
     draw(ctx, time) {
         if(this.lifeTime < 3 && Math.floor(this.lifeTime * 10) % 2 === 0) return;
         const yOff = Math.sin(time/200 + this.floatOffset) * 5;
-        ctx.fillStyle = this.type === 'heal' ? '#0f0' : '#ffd700'; ctx.beginPath();
-        if(this.type==='coin') { ctx.arc(this.x, this.y + yOff, this.radius, 0, Math.PI*2); ctx.fill(); }
-        else ctx.fillRect(this.x-6, this.y+yOff-6, 12, 12);
+        const sprite = this.type === 'heal' ? window.renderedSprites.heal : window.renderedSprites.coin;
+        if(sprite) ctx.drawImage(sprite, this.x - 12, this.y + yOff - 12, 24, 24);
     }
 }
 
@@ -1476,8 +1612,16 @@ class Game {
             this.flowTimer = 0.25; 
         }
 
-        this.player.update(dt, this, this.level);
-        this.camera.x = this.player.x - CANVAS_WIDTH / 2; this.camera.y = this.player.y - CANVAS_HEIGHT / 2;
+        if(!this.player.active) {
+            this.player.deadTimer += dt;
+            if(this.player.deadTimer > 2.0) {
+                this.endRun(false);
+                return;
+            }
+        } else {
+            this.player.update(dt, this, this.level);
+            this.camera.x = this.player.x - CANVAS_WIDTH / 2; this.camera.y = this.player.y - CANVAS_HEIGHT / 2;
+        }
 
         if(this.mode === 'SURVIVAL') { 
             if(this.enemies.length === 0) { 
@@ -1564,14 +1708,13 @@ class Game {
         for (let i = this.dmgTexts.length - 1; i >= 0; i--) { this.dmgTexts[i].update(dt); if (!this.dmgTexts[i].active) { this.pools.dmgText.release(this.dmgTexts[i]); this.dmgTexts.splice(i, 1); } }
         
         for(let k in this.input.keys) this.prevKeys[k] = this.input.keys[k];
-
-        if (!this.player.active) this.endRun(false);
     }
 
     draw() {
         this.ctx.fillStyle = '#050508'; this.ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
         if (this.state === 'LOGIN' || this.state === 'MENU' || this.state === 'STORE') return;
 
+        this.ctx.imageSmoothingEnabled = false;
         this.ctx.save();
         if (this.shakeTime > 0) this.ctx.translate((Math.random()-0.5)*this.shakeMagnitude, (Math.random()-0.5)*this.shakeMagnitude);
         this.ctx.translate(-this.camera.x, -this.camera.y);
@@ -1592,7 +1735,7 @@ class Game {
             }
         });
 
-        if (this.player.active) this.player.draw(this.ctx);
+        this.player.draw(this.ctx);
         this.dmgTexts.forEach(t => t.draw(this.ctx));
 
         this.ctx.restore();
@@ -1660,7 +1803,7 @@ class Game {
     }
 }
 
-window.onload = () => { const game = new Game(); requestAnimationFrame((t) => { game.lastTime = t; game.loop(t); }); };
+window.onload = () => { initSprites(); const game = new Game(); requestAnimationFrame((t) => { game.lastTime = t; game.loop(t); }); };
 </script>
 </body>
 </html>
