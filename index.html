@@ -16,23 +16,12 @@
             user-select: none; touch-action: none;
         }
 
-        #appWrapper {
-            display: flex;
-            width: 100%;
-            height: 100%;
-        }
+        #appWrapper { display: flex; width: 100%; height: 100%; }
 
         body.pc-mode #appWrapper { flex-direction: row; justify-content: center; align-items: center; gap: 20px; background-color: var(--bg-color); }
         body.mobile-mode #appWrapper { flex-direction: column; background-color: #8b8b8b; }
 
-        #topScreen {
-            position: relative;
-            background: #000;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 10;
-        }
+        #topScreen { position: relative; background: #000; display: flex; justify-content: center; align-items: center; z-index: 10; }
 
         body.pc-mode #topScreen { flex: 0 0 auto; width: 1024px; height: 768px; max-width: 100%; max-height: 100%; box-shadow: 0 0 20px rgba(0,255,204,0.2); }
         body.mobile-mode #topScreen { flex: 0 0 50vh; width: 100%; border-bottom: 4px solid #333; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
@@ -142,6 +131,8 @@
         body.mobile-mode #leaderboardPanelMobile { flex: 0 0 160px; border-radius: 0; border-width: 3px 0 0 0; padding: 5px 15px; }
         body.mobile-mode #leaderboardPanelMobile h2 { font-size: 1em; margin: 2px 0; }
         body.mobile-mode .lb-entry { padding: 4px 0; font-size: 0.9em; }
+
+        #pauseMutationsList { text-align: left; margin-top: 15px; border-top: 1px solid #444; padding-top: 10px; max-height: 150px; overflow-y: auto; color: #0f0; font-size: 0.9em; }
     </style>
 </head>
 <body>
@@ -186,6 +177,7 @@
                     <button id="btnResume">Continuar</button>
                     <button id="btnPauseSound">Sonido: <span id="pauseSoundStatus">ON</span></button>
                     <button id="btnQuit" class="danger">Abandonar</button>
+                    <div id="pauseMutationsList"></div>
                 </div>
                 <div id="gameOverScreen" class="screen">
                     <h2>FIN DE TRANSMISIÓN</h2><p id="goContext"></p>
@@ -1067,14 +1059,29 @@ class SpatialGrid {
 }
 
 class Level {
-    constructor(levelIndex, isSurvival) {
+    constructor(levelIndex, mode, isTutorial = false) {
         this.index = levelIndex;
-        this.cols = isSurvival ? 40 : 30 + levelIndex * 3; this.rows = isSurvival ? 40 : 30 + levelIndex * 3;
+        if(isTutorial) {
+            this.cols = 15; this.rows = 15;
+        } else {
+            this.cols = mode === 'SURVIVAL' ? 40 : 30 + levelIndex * 3; 
+            this.rows = mode === 'SURVIVAL' ? 40 : 30 + levelIndex * 3;
+        }
         this.grid = []; this.tileSize = TILE_SIZE; this.floorTiles = []; this.flowField = [];
-        this.generate(isSurvival);
+        this.generate(mode === 'SURVIVAL', isTutorial);
     }
-    generate(isSurvival) {
+    generate(isSurvival, isTutorial) {
         for (let y = 0; y < this.rows; y++) { this.grid[y] = []; for (let x = 0; x < this.cols; x++) this.grid[y][x] = 1; }
+        
+        if (isTutorial) {
+            for(let y=2; y<this.rows-2; y++) {
+                for(let x=2; x<this.cols-2; x++) {
+                    this.grid[y][x] = 0; this.floorTiles.push({x, y});
+                }
+            }
+            return;
+        }
+
         let x = Math.floor(this.cols/2), y = Math.floor(this.rows/2);
         const maxFloorTiles = isSurvival ? Math.floor((this.cols*this.rows)*0.7) : Math.floor((this.cols*this.rows)*0.4);
         let floorsCreated = 0;
@@ -1129,9 +1136,9 @@ class Level {
             }
         }
     }
-    draw(ctx, camera) {
-        const sc = Math.max(0, Math.floor(camera.x/this.tileSize)), ec = Math.min(this.cols, Math.ceil((camera.x+CANVAS_WIDTH)/this.tileSize));
-        const sr = Math.max(0, Math.floor(camera.y/this.tileSize)), er = Math.min(this.rows, Math.ceil((camera.y+CANVAS_HEIGHT)/this.tileSize));
+    draw(ctx, camera, zoom) {
+        const sc = Math.max(0, Math.floor(camera.x/this.tileSize)), ec = Math.min(this.cols, Math.ceil((camera.x+(CANVAS_WIDTH/zoom))/this.tileSize));
+        const sr = Math.max(0, Math.floor(camera.y/this.tileSize)), er = Math.min(this.rows, Math.ceil((camera.y+(CANVAS_HEIGHT/zoom))/this.tileSize));
         for (let y = sr; y < er; y++) {
             for (let x = sc; x < ec; x++) {
                 const rx = x*this.tileSize;
@@ -1242,7 +1249,7 @@ class Weapon {
         if (this.chargeAmount > this.config.maxCharge) this.chargeAmount = this.config.maxCharge;
     }
     fire(x, y, targetX, targetY, game, time, isEnemy = false, chargeAmount = 0) {
-        if (this.reloading || (!isEnemy && time - this.lastFired < this.config.fireRate)) return false;
+        if (this.reloading || time - this.lastFired < this.config.fireRate) return false;
         if (!isEnemy && this.ammo <= 0) { this.startReload(); return false; }
         
         this.lastFired = time;
@@ -1303,10 +1310,11 @@ class Weapon {
         
         if (this.reloading) {
             let animProgress = this.reloadTimer / this.config.reloadTime;
-            if (animProgress > 0) ctx.rotate(animProgress * Math.PI * 2);
+            ctx.translate(0, -Math.sin(animProgress * Math.PI) * 15);
+            ctx.rotate(animProgress * Math.PI * 4);
         }
 
-        if (Math.abs(angle) > Math.PI / 2) {
+        if (Math.abs(angle) > Math.PI / 2 && !this.reloading) {
             ctx.scale(1, -1);
         }
         
@@ -1318,6 +1326,8 @@ class Weapon {
             ctx.fillStyle = `rgba(0, 255, 255, ${this.chargeAmount / this.config.maxCharge * 0.5})`;
             ctx.fill();
         }
+
+        ctx.scale(1.5, 1.5);
 
         let sprite = window.renderedSprites[this.config.id];
         if(sprite) {
@@ -1342,8 +1352,8 @@ class Bullet {
         this.trail.push({x: this.x, y: this.y}); if(this.trail.length > 5) this.trail.shift();
         let nx = this.x + this.vx * dt, ny = this.y + this.vy * dt;
         
-        let hitX = level.checkCollision(nx, this.y, this.radius) || this.checkPropCollision(nx, this.y, game.props);
-        let hitY = level.checkCollision(this.x, ny, this.radius) || this.checkPropCollision(this.x, ny, game.props);
+        let hitX = level.checkCollision(nx, this.y, this.radius) || this.checkPropCollision(nx, this.y, game);
+        let hitY = level.checkCollision(this.x, ny, this.radius) || this.checkPropCollision(this.x, ny, game);
 
         if(hitX || hitY) {
             if(this.bounces > 0 && !this.explosive) {
@@ -1357,10 +1367,10 @@ class Bullet {
         if(!hitX) this.x = nx; if(!hitY) this.y = ny;
         this.lifeTime -= dt; if (this.lifeTime <= 0) this.active = false;
     }
-    checkPropCollision(x, y, props) {
-        for(let p of props) {
+    checkPropCollision(x, y, game) {
+        for(let p of game.props) {
             if(p.active && p.type !== 'trap' && distance(x, y, p.x, p.y) < this.radius + p.radius) {
-                p.takeDamage(this.damage, window.gameInstance); return true;
+                p.takeDamage(this.damage, game); return true;
             }
         }
         return false;
@@ -1421,6 +1431,7 @@ class Player {
         this.invulnerableTimer = 0; this.angle = 0;
         this.dmgMult = 1.0; this.defenseMult = 1.0; this.bounceCount = 0;
         this.mutations = []; this.deadTimer = 0; this.isMoving = false;
+        this.lastAimAngle = 0;
     }
     update(dt, game, level) {
         if (this.dashCooldownTimer > 0) this.dashCooldownTimer -= dt;
@@ -1440,25 +1451,22 @@ class Player {
         const curSpeed = this.isDashing ? this.baseSpeed * 3 : this.baseSpeed;
         let nx = this.x + dx * curSpeed * dt, ny = this.y + dy * curSpeed * dt;
         
-        if (!level.checkCollision(nx, this.y, this.radius) && !this.checkPropCollision(nx, this.y, game.props)) this.x = nx;
-        if (!level.checkCollision(this.x, ny, this.radius) && !this.checkPropCollision(this.x, ny, game.props)) this.y = ny;
+        if (!level.checkCollision(nx, this.y, this.radius) && (!this.checkPropCollision(nx, this.y, game.props) || this.isDashing)) this.x = nx;
+        if (!level.checkCollision(this.x, ny, this.radius) && (!this.checkPropCollision(this.x, ny, game.props) || this.isDashing)) this.y = ny;
 
         let targetX = game.input.mouse.x + game.camera.x;
         let targetY = game.input.mouse.y + game.camera.y;
 
         if (isMobileMode) {
-            let closest = null, minDist = 600;
-            for (let e of game.enemies) {
-                if (e.active) {
-                    let d = distance(this.x, this.y, e.x, e.y);
-                    if (d < minDist) { minDist = d; closest = e; }
-                }
+            if (this.isMoving) {
+                this.lastAimAngle = Math.atan2(dy, dx);
             }
-            if (closest) { targetX = closest.x; targetY = closest.y; }
-            else if (this.isMoving) { targetX = this.x + dx * 100; targetY = this.y + dy * 100; }
+            this.angle = this.lastAimAngle;
+            targetX = this.x + Math.cos(this.angle)*100;
+            targetY = this.y + Math.sin(this.angle)*100;
+        } else {
+            this.angle = Math.atan2(targetY - this.y, targetX - this.x);
         }
-
-        this.angle = Math.atan2(targetY - this.y, targetX - this.x);
 
         this.weapon.update(dt);
         if (game.input.keys['KeyR'] && !game.prevKeys['KeyR']) this.weapon.attemptActiveReload(game);
@@ -1680,17 +1688,6 @@ class Enemy {
                 if (ddist > 0) { dx = (tx - this.x)/ddist; dy = (ty - this.y)/ddist; }
             } else { dx = (target.x - this.x)/dist; dy = (target.y - this.y)/dist; }
         }
-        
-        let sepX = 0, sepY = 0, count = 0;
-        let neighbors = game.spatialGrid.query(this.x, this.y, this.radius*3);
-        for(let n of neighbors) {
-            if(n !== this && distance(this.x, this.y, n.x, n.y) > 0) {
-                let diffX = this.x - n.x, diffY = this.y - n.y;
-                let len = Math.hypot(diffX, diffY);
-                sepX += diffX/len; sepY += diffY/len; count++;
-            }
-        }
-        if(count > 0) { dx += (sepX/count)*1.5; dy += (sepY/count)*1.5; let len = Math.hypot(dx,dy); dx/=len; dy/=len; }
 
         this.isMoving = dx !== 0 || dy !== 0;
         if(this.isMoving) this.facingLeft = dx < 0;
@@ -1713,7 +1710,7 @@ class Enemy {
         if (this.hp <= 0) {
             this.active = false; audioSys.sfxEnemyDeath();
             
-            game.corpses.push({ type: this.type, x: this.x, y: this.y, facingLeft: this.facingLeft, phase2: this.phase2 });
+            game.corpses.push({ type: this.type, x: this.x, y: this.y, facingLeft: this.facingLeft, phase2: this.phase2, life: 30 });
 
             if (game.mode === 'STORY' && fromPlayer && !this.summoned) {
                 if (this.type === 'boss') {
@@ -1786,8 +1783,27 @@ class Portal {
     constructor(x, y) { this.x = x; this.y = y; this.radius = 20; this.angle = 0; }
     draw(ctx, dt) {
         this.angle += dt * 2; ctx.save(); ctx.translate(this.x, this.y); ctx.rotate(this.angle);
-        ctx.strokeStyle = '#00ffcc'; ctx.lineWidth = 3; ctx.strokeRect(-15, -15, 30, 30);
-        ctx.rotate(-this.angle*2); ctx.strokeStyle = '#ff00ff'; ctx.strokeRect(-10, -10, 20, 20); ctx.restore();
+        
+        ctx.beginPath();
+        ctx.arc(0, 0, this.radius, 0, Math.PI * 2);
+        ctx.strokeStyle = '#00ffcc'; ctx.lineWidth = 4; ctx.stroke();
+        
+        ctx.beginPath();
+        ctx.arc(0, 0, this.radius * 0.7, 0, Math.PI * 2);
+        ctx.strokeStyle = '#ff00ff'; ctx.lineWidth = 2; ctx.stroke();
+        
+        for (let i = 0; i < 4; i++) {
+            ctx.rotate(Math.PI / 2);
+            ctx.beginPath();
+            ctx.moveTo(0, this.radius * 0.5);
+            ctx.lineTo(Math.random() * 10 - 5, this.radius);
+            ctx.lineTo(0, this.radius * 1.5);
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 1;
+            ctx.stroke();
+        }
+
+        ctx.restore();
     }
 }
 
@@ -1841,6 +1857,7 @@ class Game {
         this.camera = { x: 0, y: 0 }; this.shakeTime = 0; this.shakeMagnitude = 0; this.flowTimer = 0;
         this.lastFlowX = null; this.lastFlowY = null;
         this.storeSelectedIndex = 0;
+        this.introTimer = 0;
         
         this.resetGameData(); this.setupDOM(); loadDB();
     }
@@ -1956,9 +1973,21 @@ class Game {
             const user = document.getElementById('usernameInput').value.trim(), pass = document.getElementById('passwordInput').value;
             if(user && pass) {
                 if(db.users[user] && db.users[user].password !== pass) return alert('Contraseña incorrecta');
-                if(!db.users[user]) { db.users[user] = { password: pass, coins: 0, wins: 0, deaths: 0, unlocks: ['w1'], selectedWeapon: 'w1', highScore: 0 }; saveDB(); }
-                currentUser = user; this.updateMenuUI(); this.setUIState('menuScreen'); this.state = 'MENU';
-                audioSys.init(); audioSys.startBGM('menu');
+                let isNewUser = !db.users[user];
+                if(isNewUser) { 
+                    db.users[user] = { password: pass, coins: 0, wins: 0, deaths: 0, unlocks: ['w1'], selectedWeapon: 'w1', highScore: 0, tutorialDone: false }; 
+                    saveDB(); 
+                }
+                currentUser = user;
+                
+                if (isNewUser || !db.users[currentUser].tutorialDone) {
+                    this.setUIState(null);
+                    this.state = 'INTRO';
+                    this.introTimer = 4.0;
+                } else {
+                    this.updateMenuUI(); this.setUIState('menuScreen'); this.state = 'MENU';
+                    audioSys.init(); audioSys.startBGM('menu');
+                }
             }
         };
         document.getElementById('btnLogout').onclick = () => { currentUser = null; document.getElementById('passwordInput').value=''; this.setUIState('loginScreen'); this.state='LOGIN'; audioSys.stopBGM(); };
@@ -1998,7 +2027,7 @@ class Game {
             
             if (screenId === 'storeScreen') {
                 document.getElementById('storeControls').style.display = 'block';
-            } else {
+            } else if (!screenId) {
                 document.getElementById('gameplayControls').style.display = 'block';
             }
         }
@@ -2069,7 +2098,22 @@ class Game {
         const u = db.users[currentUser]; this.player = new Player(0, 0, WEAPONS[u.selectedWeapon]);
         this.setUIState(null); this.state = 'PLAYING'; audioSys.stopBGM();
         if(this.mode === 'STORY') this.loadLevel();
-        else { this.level = new Level(0, true); this.player.x = this.level.getSpawnPoint().x; this.player.y = this.level.getSpawnPoint().y; }
+        else { this.level = new Level(0, 'SURVIVAL'); this.player.x = this.level.getSpawnPoint().x; this.player.y = this.level.getSpawnPoint().y; }
+    }
+
+    startTutorial() {
+        this.mode = 'TUTORIAL'; this.resetGameData();
+        this.player = new Player(0, 0, WEAPONS['w1']);
+        this.setUIState(null); this.state = 'PLAYING';
+        this.level = new Level(0, 'STORY', true);
+        const spawn = this.level.getSpawnPoint(); this.player.x = spawn.x; this.player.y = spawn.y;
+        
+        for(let i=0; i<3; i++) {
+            let p = this.level.getRandomFloorPoint();
+            let e = new Enemy('basic', p.x, p.y, 1);
+            e.hp = 1; e.maxHp = 1; e.damage = 1; e.speed = 30;
+            this.enemies.push(e);
+        }
     }
 
     isPointOnProp(x, y, radius) {
@@ -2083,7 +2127,7 @@ class Game {
         this.bullets.forEach(b => this.pools.bullet.release(b)); this.particles.forEach(p => this.pools.particle.release(p));
         this.bullets = []; this.enemies = []; this.props = []; this.items = []; this.explosions = []; this.portal = null;
         this.corpses = [];
-        this.level = new Level(this.levelIndex, false);
+        this.level = new Level(this.levelIndex, 'STORY');
         const spawn = this.level.getSpawnPoint(); this.player.x = spawn.x; this.player.y = spawn.y;
         
         const numProps = randInt(20, 40);
@@ -2156,13 +2200,27 @@ class Game {
     }
 
     spawnSurvivalWave() {
-        this.waveTimer = 5; const scale = 1 + this.wave * 0.15;
-        if (this.wave % 10 === 0) {
+        this.waveTimer = 10;
+        
+        if (this.wave > 1 && this.wave % randInt(3, 6) === 0) {
+            const numProps = randInt(5, 15);
+            for(let i=0; i<numProps; i++) {
+                let p = this.level.getRandomFloorPoint(); 
+                if(distance(p.x, p.y, this.player.x, this.player.y) > 200) {
+                    this.props.push(new Prop('cover', p.x, p.y));
+                }
+            }
+        }
+
+        if (this.wave % 7 === 0) {
+            let bossCount = Math.floor(this.wave / 7);
+            const scale = 1 + (bossCount * 0.25);
             let p; do { p = this.level.getRandomFloorPoint(); } while (distance(p.x, p.y, this.player.x, this.player.y) < 400 || this.isPointOnProp(p.x, p.y, 30));
             this.enemies.push(new Enemy('boss', p.x, p.y, scale)); 
             audioSys.sfxBossSpawn();
             audioSys.startBGM('boss');
         } else {
+            const scale = 1 + this.wave * 0.15;
             const numGroups = 4 + Math.floor(this.wave / 2);
             for (let g = 0; g < numGroups; g++) {
                 let p; do { p = this.level.getRandomFloorPoint(); } while (distance(p.x, p.y, this.player.x, this.player.y) < 400 || this.isPointOnProp(p.x, p.y, 20));
@@ -2187,7 +2245,19 @@ class Game {
     }
 
     togglePause() {
-        if(this.state === 'PLAYING') { this.state = 'PAUSED'; this.setUIState('pauseScreen'); }
+        if(this.state === 'PLAYING') { 
+            let mutList = document.getElementById('pauseMutationsList');
+            mutList.innerHTML = '<strong>Habilidades:</strong><br>';
+            if(this.player.mutations.length === 0) mutList.innerHTML += 'Ninguna';
+            else {
+                this.player.mutations.forEach(mId => {
+                    let mutDef = MUTATIONS.find(m => m.id === mId);
+                    if(mutDef) mutList.innerHTML += `- ${mutDef.name}<br>`;
+                });
+            }
+            this.state = 'PAUSED'; 
+            this.setUIState('pauseScreen'); 
+        }
         else if (this.state === 'PAUSED') { this.state = 'PLAYING'; this.setUIState(null); }
     }
 
@@ -2196,6 +2266,13 @@ class Game {
     showDmgText(x, y, text, color) { let t = this.pools.dmgText.get(); t.init(x, y, text, color); this.dmgTexts.push(t); }
 
     endRun(isWin) {
+        if (this.mode === 'TUTORIAL') {
+            db.users[currentUser].tutorialDone = true;
+            saveDB();
+            this.updateMenuUI(); this.setUIState('menuScreen'); this.state = 'MENU';
+            audioSys.startBGM('menu');
+            return;
+        }
         this.state = isWin ? 'VICTORY' : 'GAMEOVER'; const u = db.users[currentUser]; u.coins += this.runCoins; audioSys.stopBGM();
         if (isWin) { u.wins++; document.getElementById('vicScore').innerText = this.score; document.getElementById('vicCoins').innerText = this.runCoins; this.setUIState('victoryScreen'); } 
         else { u.deaths++; document.getElementById('goContext').innerText = `Modo: ${this.mode} | ${this.mode==='STORY' ? 'Nivel: '+(this.levelIndex+1) : 'Oleada: '+(this.wave-1)}`; document.getElementById('goScore').innerText = this.score; document.getElementById('goCoins').innerText = this.runCoins; this.setUIState('gameOverScreen'); }
@@ -2204,6 +2281,14 @@ class Game {
     }
 
     update(dt) {
+        if (this.state === 'INTRO') {
+            this.introTimer -= dt;
+            if (this.introTimer <= 0) {
+                this.startTutorial();
+            }
+            return;
+        }
+
         if (this.state !== 'PLAYING') return;
         this.time += dt * 1000; if (this.shakeTime > 0) this.shakeTime -= dt;
         
@@ -2227,7 +2312,9 @@ class Game {
             }
         } else {
             this.player.update(dt, this, this.level);
-            this.camera.x = this.player.x - CANVAS_WIDTH / 2; this.camera.y = this.player.y - CANVAS_HEIGHT / 2;
+            let camZoom = isMobileMode ? 1.5 : 1;
+            this.camera.x = this.player.x - (CANVAS_WIDTH / camZoom) / 2; 
+            this.camera.y = this.player.y - (CANVAS_HEIGHT / camZoom) / 2;
         }
 
         if(this.mode === 'SURVIVAL') { 
@@ -2266,6 +2353,11 @@ class Game {
             let e = this.enemies[i]; e.update(dt, this, this.level);
             if (distance(e.x, e.y, this.player.x, this.player.y) < e.radius + this.player.radius) this.player.takeDamage(e.damage, this);
             if (!e.active) this.enemies.splice(i, 1); else activeEnemies++;
+        }
+
+        if (this.mode === 'TUTORIAL' && activeEnemies === 0) {
+            this.endRun(true);
+            return;
         }
 
         if (this.mode === 'STORY' && activeEnemies === 0) {
@@ -2310,6 +2402,11 @@ class Game {
             }
         }
 
+        for (let i = this.corpses.length - 1; i >= 0; i--) {
+            this.corpses[i].life -= dt;
+            if(this.corpses[i].life <= 0) this.corpses.splice(i, 1);
+        }
+
         for (let i = this.particles.length - 1; i >= 0; i--) { this.particles[i].update(dt); if (!this.particles[i].active) { this.pools.particle.release(this.particles[i]); this.particles.splice(i, 1); } }
         for (let i = this.customParticles.length - 1; i >= 0; i--) { this.customParticles[i].life -= dt; if(this.customParticles[i].life <= 0) this.customParticles.splice(i, 1); }
         for (let i = this.dmgTexts.length - 1; i >= 0; i--) { this.dmgTexts[i].update(dt); if (!this.dmgTexts[i].active) { this.pools.dmgText.release(this.dmgTexts[i]); this.dmgTexts.splice(i, 1); } }
@@ -2322,12 +2419,40 @@ class Game {
         this.ctx.fillStyle = '#050508'; this.ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
         if (this.state === 'LOGIN' || this.state === 'MENU' || this.state === 'STORE') return;
 
+        if (this.state === 'INTRO') {
+            this.ctx.fillStyle = '#000';
+            this.ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+            
+            let alpha = 1;
+            if (this.introTimer > 3) alpha = 4 - this.introTimer;
+            else if (this.introTimer < 1) alpha = this.introTimer;
+            
+            this.ctx.globalAlpha = alpha;
+            this.ctx.textAlign = 'center';
+            this.ctx.fillStyle = '#00ffcc';
+            this.ctx.font = 'bold 60px Courier New';
+            this.ctx.fillText("NEON ARMOR", CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2);
+            
+            this.ctx.fillStyle = '#fff';
+            this.ctx.font = '20px Courier New';
+            this.ctx.fillText("maruyanx, nigrumdrac", CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2 + 50);
+            
+            this.ctx.globalAlpha = 1.0;
+            this.ctx.textAlign = 'left';
+            return;
+        }
+
         this.ctx.imageSmoothingEnabled = false;
         this.ctx.save();
+        
+        let camZoom = isMobileMode ? 1.5 : 1;
+        
         if (this.shakeTime > 0) this.ctx.translate((Math.random()-0.5)*this.shakeMagnitude, (Math.random()-0.5)*this.shakeMagnitude);
+        
+        this.ctx.scale(camZoom, camZoom);
         this.ctx.translate(-this.camera.x, -this.camera.y);
 
-        if (this.level) this.level.draw(this.ctx, this.camera);
+        if (this.level) this.level.draw(this.ctx, this.camera, camZoom);
         if (this.portal) this.portal.draw(this.ctx, 1/60);
         
         this.corpses.forEach(c => {
@@ -2336,6 +2461,7 @@ class Game {
             let sprite = window.renderedSprites[spriteName];
             if (sprite) {
                 this.ctx.save();
+                this.ctx.globalAlpha = Math.min(1, c.life / 2);
                 this.ctx.translate(c.x, c.y);
                 this.ctx.scale(c.facingLeft ? -1 : 1, 1);
                 let rad = ENEMY_CONFIGS[c.type].radius;
@@ -2360,6 +2486,16 @@ class Game {
         });
 
         this.player.draw(this.ctx, this.time);
+        
+        if (this.mode === 'TUTORIAL') {
+            this.ctx.textAlign = 'center';
+            this.ctx.fillStyle = '#fff';
+            this.ctx.font = '20px Courier New';
+            let tutText = isMobileMode ? "Usa los joysticks para moverte y apuntar/disparar" : "WASD para moverte, Click para disparar";
+            this.ctx.fillText(tutText, this.player.x, this.player.y - 50);
+            this.ctx.textAlign = 'left';
+        }
+
         this.dmgTexts.forEach(t => t.draw(this.ctx));
 
         this.ctx.restore();
@@ -2389,12 +2525,12 @@ class Game {
         ctx.fillStyle = 'var(--gold-color)'; ctx.fillText(`Cr: ${this.runCoins}`, 170, 75);
         ctx.textAlign = 'right'; ctx.font = '24px Courier New';
         if(this.mode === 'STORY') { ctx.fillStyle = '#00ffcc'; ctx.fillText(`Nv: ${this.levelIndex + 1}/${this.targetLevels}`, CANVAS_WIDTH - 20, 40); ctx.fillStyle = '#fff'; ctx.fillText(`Pts: ${this.score}`, CANVAS_WIDTH - 20, 70); } 
-        else { ctx.fillStyle = '#ff0055'; ctx.fillText(`Oleada: ${this.wave - 1}`, CANVAS_WIDTH - 20, 40); if(this.enemies.length === 0 && this.waveTimer > 0) { ctx.fillStyle = '#fff'; ctx.fillText(`Sig: ${Math.ceil(this.waveTimer)}s`, CANVAS_WIDTH - 20, 70); } }
+        else if(this.mode === 'SURVIVAL') { ctx.fillStyle = '#ff0055'; ctx.fillText(`Oleada: ${this.wave - 1}`, CANVAS_WIDTH - 20, 40); if(this.enemies.length === 0 && this.waveTimer > 0) { ctx.fillStyle = '#fff'; ctx.fillText(`Sig: ${Math.ceil(this.waveTimer)}s`, CANVAS_WIDTH - 20, 70); } }
         ctx.textAlign = 'left';
     }
 
     drawMinimap() {
-        if(!this.level) return;
+        if(!this.level || this.mode === 'TUTORIAL') return;
         let size = 150;
         let mapX = CANVAS_WIDTH - size - 20;
         let mapY = CANVAS_HEIGHT - size - 20;
