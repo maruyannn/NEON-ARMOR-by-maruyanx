@@ -77,12 +77,13 @@
         body.pc-mode .store-grid { grid-template-columns: repeat(3, 1fr); max-height: 50vh; overflow-y: auto; padding: 10px; }
         body.mobile-mode .store-grid { grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
 
-        .weapon-card { border: 2px solid #555; padding: 15px; background: #111; cursor: pointer; }
+        .weapon-card { border: 2px solid #555; padding: 15px; background: #111; cursor: pointer; position: relative; }
         .weapon-card.unlocked { border-color: var(--accent-color); }
         .weapon-card.highlighted { border-color: #fff; box-shadow: 0 0 15px #fff; background: #333; transform: scale(1.02); transition: 0.1s; }
         .weapon-card.selected { box-shadow: 0 0 10px var(--accent-color); background: #1a2a2a; }
-        .weapon-card h4 { margin: 0 0 5px 0; color: #fff; }
+        .weapon-card h4 { margin: 0 0 5px 0; color: #fff; display: flex; justify-content: space-between; align-items: center; }
         .weapon-card p { margin: 2px 0; color: #aaa; }
+        .weapon-sprite-ui { height: 24px; image-rendering: pixelated; }
         .buy-btn-hint { color: var(--gold-color); font-weight: bold; font-size: 0.8em; margin-top: 5px; display: block; }
 
         body.mobile-mode .weapon-card { padding: 10px; }
@@ -577,6 +578,42 @@ const SPRITE_DATA = {
         "                ",
         "                "
     ],
+    barrel: [
+        "   0000000000   ",
+        "  044444444440  ",
+        "  055555555550  ",
+        " 05555555555550 ",
+        " 05550000005550 ",
+        " 05508888880550 ",
+        " 05508088080550 ",
+        " 05508800880550 ",
+        " 05500000000550 ",
+        " 05555555555550 ",
+        " 05555555555550 ",
+        "  055555555550  ",
+        "  055555555550  ",
+        "  044444444440  ",
+        "   0000000000   ",
+        "                "
+    ],
+    trap: [
+        "                ",
+        "  000000000000  ",
+        " 04444444444440 ",
+        " 04400044000440 ",
+        " 040aa0440aa040 ",
+        " 040aa0440aa040 ",
+        " 04400044000440 ",
+        " 04444444444440 ",
+        " 04400044000440 ",
+        " 040aa0440aa040 ",
+        " 040aa0440aa040 ",
+        " 04400044000440 ",
+        " 04444444444440 ",
+        "  000000000000  ",
+        "                ",
+        "                "
+    ],
     heal: [
         "  000000000000  ",
         " 04444444444440 ",
@@ -612,6 +649,216 @@ const SPRITE_DATA = {
         "                ",
         "                ",
         "                "
+    ],
+    w1: [
+        "                ",
+        "                ",
+        "  00000         ",
+        " 0ddddd0        ",
+        " 0dd000         ",
+        "  00            ",
+        "                ",
+        "                "
+    ],
+    w2: [
+        "                ",
+        "                ",
+        "  0000000       ",
+        " 0ddddddd0      ",
+        " 033000         ",
+        "  00            ",
+        "                ",
+        "                "
+    ],
+    w3: [
+        "                ",
+        "  00000000      ",
+        " 0dddddddd0     ",
+        " 0dd0d0000      ",
+        " 0d0 0d0        ",
+        "  0   0         ",
+        "                ",
+        "                "
+    ],
+    w4: [
+        "                ",
+        "   000000000    ",
+        "  033ddddddd0   ",
+        " 0330d00000     ",
+        " 0d0            ",
+        "                ",
+        "                ",
+        "                "
+    ],
+    w5: [
+        "                ",
+        "  0000000000    ",
+        " 0dddddddddd0   ",
+        " 0dd0d00dd00    ",
+        " 0d0 0d0        ",
+        "  0   0         ",
+        "                ",
+        "                "
+    ],
+    w6: [
+        "                ",
+        "  0000000000    ",
+        " 022dddddd220   ",
+        " 0dd0d00dd00    ",
+        " 0d0 0d0        ",
+        "  0   0         ",
+        "                ",
+        "                "
+    ],
+    w7: [
+        "                ",
+        "  0000000000    ",
+        " 077dddddd770   ",
+        " 0dd0d00dd00    ",
+        " 0d0 0d0        ",
+        "  0   0         ",
+        "                ",
+        "                "
+    ],
+    w8: [
+        "     0000       ",
+        "  0000dd00000   ",
+        " 033ddddddddd0  ",
+        " 0330d000000    ",
+        " 0d0            ",
+        "                ",
+        "                ",
+        "                "
+    ],
+    w9: [
+        "                ",
+        "  0000000       ",
+        " 0ddddddd0      ",
+        " 0d00d0000      ",
+        " 0d00dd0        ",
+        " 0d0            ",
+        "                ",
+        "                "
+    ],
+    w10: [
+        "                ",
+        "  0000000000    ",
+        " 055dddddd550   ",
+        " 0550d00d00     ",
+        " 0d0            ",
+        "                ",
+        "                ",
+        "                "
+    ],
+    w11: [
+        "                ",
+        "   00000000     ",
+        " 00dddddddd0    ",
+        " 0dddddddddd0   ",
+        " 0d0000dd0000   ",
+        " 0d0   0d0      ",
+        "  0     0       ",
+        "                "
+    ],
+    w12: [
+        "                ",
+        "  0000000000    ",
+        " 0ccddddddcc0   ",
+        " 0dd0d00dd00    ",
+        " 0d0 0d0        ",
+        "  0   0         ",
+        "                ",
+        "                "
+    ],
+    w13: [
+        "                ",
+        "  0000000000    ",
+        " 0ccddddddcc0   ",
+        " 0cc0d00d00     ",
+        " 0d0            ",
+        "                ",
+        "                ",
+        "                "
+    ],
+    w14: [
+        "      0000      ",
+        "     0d0  00    ",
+        "   00d0    080  ",
+        " 00d0d0     080 ",
+        " 0dddd0     080 ",
+        " 00d0d0     080 ",
+        "   00d0    080  ",
+        "     0d0  00    "
+    ],
+    w15: [
+        "     0000       ",
+        "  0000dd00000   ",
+        " 0ffddddddddf0  ",
+        " 0ff0d000000    ",
+        " 0d0            ",
+        "                ",
+        "                ",
+        "                "
+    ],
+    w16: [
+        "                ",
+        "  00000000      ",
+        " 055dddd550     ",
+        " 0d00d0000      ",
+        " 0d00dd0        ",
+        " 0d0            ",
+        "                ",
+        "                "
+    ],
+    w17: [
+        "                ",
+        "   000000000    ",
+        " 00fdddddddf0   ",
+        " 0fddddddddf0   ",
+        " 0d0000dd0000   ",
+        " 0d0   0d0      ",
+        "  0     0       ",
+        "                "
+    ],
+    w18: [
+        "                ",
+        "  0000000000    ",
+        " 0777dddd7770   ",
+        " 0dd0d00dd00    ",
+        " 0d0 0d0        ",
+        "  0   0         ",
+        "                ",
+        "                "
+    ],
+    w19: [
+        "    000000      ",
+        "  0099999900    ",
+        " 099dddddd990   ",
+        " 0dd0d00dd00    ",
+        " 0d0 0d0        ",
+        "  0   0         ",
+        "                ",
+        "                "
+    ],
+    w20: [
+        "     0000       ",
+        "  0000dd00000   ",
+        " 0eedddddddde0  ",
+        " 0ee0d000000    ",
+        " 0d0            ",
+        "                ",
+        "                ",
+        "                "
+    ],
+    w21: [
+        "  0000000000    ",
+        " 055dddddd550   ",
+        " 055dddddd550   ",
+        " 0550d00dd00    ",
+        " 0550d00        ",
+        " 0d0 0d0        ",
+        "  0   0         ",
+        "                "
     ]
 };
 
@@ -619,7 +866,7 @@ const SPRITE_COLORS = {
     '0': '#000000', '1': '#fa7014', '2': '#00ffff', '3': '#8b5a2b', 
     '4': '#dddddd', '5': '#e60033', '6': '#a05a2c', '7': '#00ff00', 
     '8': '#ffd700', '9': '#8800ff', 'a': '#aa0000', 'b': '#ffaa00', 
-    'c': '#0088ff', 'd': '#555555'
+    'c': '#0088ff', 'd': '#555555', 'e': '#ffffff', 'f': '#ff00ff'
 };
 
 window.renderedSprites = {};
@@ -657,13 +904,13 @@ const WEAPONS = {
     w11: { id: 'w11', name: 'Ametralladora', damage: 8, cost: 2200, fireRate: 80, speed: 850, spread: 0.12, auto: true, color: '#00ffff', magSize: 80, reloadTime: 3.5, type: 'rifle' },
     w12: { id: 'w12', name: 'Rifle de Plasma', damage: 15, cost: 2600, fireRate: 130, speed: 1000, spread: 0.05, auto: true, color: '#00ffff', magSize: 50, reloadTime: 2.0, type: 'rifle' },
     w13: { id: 'w13', name: 'Emisor de Ondas', damage: 5, cost: 3000, fireRate: 800, speed: 600, spread: 0.4, auto: false, color: '#00ffff', magSize: 10, reloadTime: 2.5, type: 'shotgun', bullets: 10 },
-    w14: { id: 'w14', name: 'Arco Eléctrico', damage: 20, cost: 3500, fireRate: 200, speed: 1500, spread: 0.01, auto: true, color: '#00ffff', magSize: 30, reloadTime: 2.2, type: 'laser' },
-    w15: { id: 'w15', name: 'Cañón Gauss', damage: 60, cost: 4000, fireRate: 1500, speed: 2000, spread: 0, auto: false, color: '#00ffff', magSize: 3, reloadTime: 3.0, type: 'sniper' },
+    w14: { id: 'w14', name: 'Arco Eléctrico', damage: 20, cost: 3500, fireRate: 200, speed: 1500, spread: 0.01, auto: true, color: '#00ffff', magSize: 30, reloadTime: 2.2, type: 'laser', chargeable: true, maxCharge: 1.5 },
+    w15: { id: 'w15', name: 'Cañón Gauss', damage: 60, cost: 4000, fireRate: 1500, speed: 2000, spread: 0, auto: false, color: '#00ffff', magSize: 3, reloadTime: 3.0, type: 'sniper', chargeable: true, maxCharge: 2.5 },
     w16: { id: 'w16', name: 'Lanza Misiles', damage: 50, cost: 4500, fireRate: 1200, speed: 500, spread: 0.05, auto: false, color: '#00ffff', magSize: 4, reloadTime: 3.5, type: 'grenade', explosive: true, radius: 100 },
     w17: { id: 'w17', name: 'Láser Pesado', damage: 6, cost: 5000, fireRate: 30, speed: 1200, spread: 0.01, auto: true, color: '#00ffff', magSize: 200, reloadTime: 3.0, type: 'laser' },
     w18: { id: 'w18', name: 'Desintegrador', damage: 35, cost: 6000, fireRate: 300, speed: 1100, spread: 0.02, auto: true, color: '#00ffff', magSize: 40, reloadTime: 2.5, type: 'rifle' },
-    w19: { id: 'w19', name: 'Materia Oscura', damage: 100, cost: 10000, fireRate: 1500, speed: 600, spread: 0, auto: false, color: '#00ffff', magSize: 2, reloadTime: 4.0, type: 'grenade', explosive: true, radius: 150 },
-    w20: { id: 'w20', name: 'Rayo de la Muerte', damage: 150, cost: 15000, fireRate: 1500, speed: 3000, spread: 0, auto: false, color: '#00ffff', magSize: 3, reloadTime: 3.5, type: 'sniper' },
+    w19: { id: 'w19', name: 'Materia Oscura', damage: 100, cost: 10000, fireRate: 1500, speed: 600, spread: 0, auto: false, color: '#00ffff', magSize: 2, reloadTime: 4.0, type: 'grenade', explosive: true, radius: 150, chargeable: true, maxCharge: 3.0 },
+    w20: { id: 'w20', name: 'Rayo de la Muerte', damage: 150, cost: 15000, fireRate: 1500, speed: 3000, spread: 0, auto: false, color: '#00ffff', magSize: 3, reloadTime: 3.5, type: 'sniper', chargeable: true, maxCharge: 3.0 },
     w21: { id: 'w21', name: 'Aniquilador Supremo', damage: 300, cost: 25000, fireRate: 2000, speed: 800, spread: 0, auto: false, color: '#00ffff', magSize: 1, reloadTime: 5.0, type: 'grenade', explosive: true, radius: 250 }
 };
 
@@ -965,16 +1212,19 @@ class Prop {
     }
     draw(ctx) {
         if(this.type === 'barrel') {
-            ctx.fillStyle = '#aa2222'; ctx.beginPath(); ctx.arc(this.x, this.y, this.radius, 0, Math.PI*2); ctx.fill();
-            ctx.fillStyle = '#ff5500'; ctx.beginPath(); ctx.arc(this.x, this.y, this.radius*0.6, 0, Math.PI*2); ctx.fill();
+            if(window.renderedSprites.barrel) {
+                ctx.drawImage(window.renderedSprites.barrel, this.x - this.radius*1.5, this.y - this.radius*1.5, this.radius*3, this.radius*3);
+            }
         } else if(this.type === 'cover') {
             if(window.renderedSprites.crate) {
                 ctx.drawImage(window.renderedSprites.crate, this.x - this.radius*1.5, this.y - this.radius*1.5, this.radius*3, this.radius*3);
                 ctx.fillStyle = `rgba(0,0,0, ${1 - this.hp/this.maxHp})`; ctx.fillRect(this.x-15, this.y-15, 30, 30);
             }
         } else if(this.type === 'trap') {
-            ctx.fillStyle = '#222'; ctx.fillRect(this.x-15, this.y-15, 30, 30);
-            if(this.state === 1) { ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(this.x, this.y, 8, 0, Math.PI*2); ctx.fill(); }
+            if(window.renderedSprites.trap) {
+                ctx.drawImage(window.renderedSprites.trap, this.x - this.radius*1.2, this.y - this.radius*1.2, this.radius*2.4, this.radius*2.4);
+            }
+            if(this.state === 1) { ctx.fillStyle = '#ff0000'; ctx.beginPath(); ctx.arc(this.x, this.y, 8, 0, Math.PI*2); ctx.fill(); }
         }
     }
 }
@@ -984,15 +1234,27 @@ class Weapon {
         this.config = config; this.lastFired = 0; 
         this.ammo = config.magSize; this.reloading = false; this.reloadTimer = 0;
         this.perfectReload = false;
+        this.chargeAmount = 0;
     }
-    fire(x, y, targetX, targetY, game, time, isEnemy = false) {
-        if (this.reloading || time - this.lastFired < this.config.fireRate) return false;
+    charge(dt) {
+        if (!this.config.chargeable || this.reloading) return;
+        this.chargeAmount += dt;
+        if (this.chargeAmount > this.config.maxCharge) this.chargeAmount = this.config.maxCharge;
+    }
+    fire(x, y, targetX, targetY, game, time, isEnemy = false, chargeAmount = 0) {
+        if (this.reloading || (!isEnemy && time - this.lastFired < this.config.fireRate)) return false;
         if (!isEnemy && this.ammo <= 0) { this.startReload(); return false; }
         
         this.lastFired = time;
         const angle = Math.atan2(targetY - y, targetX - x);
         const bullets = this.config.bullets || 1;
-        const dmgMult = (isEnemy ? 1 : game.player.dmgMult) * (this.perfectReload ? 1.5 : 1);
+        
+        let chargeMult = 1.0;
+        if (this.config.chargeable && chargeAmount > 0.5) {
+            chargeMult = 1.0 + (chargeAmount / this.config.maxCharge) * 2.0;
+        }
+
+        const dmgMult = (isEnemy ? 1 : game.player.dmgMult) * (this.perfectReload ? 1.5 : 1) * chargeMult;
         
         for (let i = 0; i < bullets; i++) {
             const spread = (Math.random() - 0.5) * this.config.spread;
@@ -1000,19 +1262,21 @@ class Weapon {
             const vx = Math.cos(finalAngle) * this.config.speed;
             const vy = Math.sin(finalAngle) * this.config.speed;
             let b = game.pools.bullet.get();
-            b.init(x, y, vx, vy, !isEnemy, this.config.damage * dmgMult, this.config.color, this.config.explosive, this.config.radius, !isEnemy && game.player.bounceCount > 0 ? game.player.bounceCount : 0);
+            let finalRadius = this.config.radius * (chargeMult > 1 ? chargeMult * 0.8 : 1);
+            b.init(x, y, vx, vy, !isEnemy, this.config.damage * dmgMult, this.config.color, this.config.explosive, finalRadius, !isEnemy && game.player.bounceCount > 0 ? game.player.bounceCount : 0);
+            if (chargeMult > 1) b.radius *= 1.5;
             game.bullets.push(b);
         }
         audioSys.sfxShoot();
         if(!isEnemy) {
-            this.ammo--; game.triggerScreenShake(this.config.type === 'shotgun' || this.config.type === 'grenade' ? 6 : 2);
+            this.ammo--; game.triggerScreenShake(this.config.type === 'shotgun' || this.config.type === 'grenade' || chargeMult > 1.5 ? 6 : 2);
             if(this.ammo <= 0) this.startReload();
         }
         return true;
     }
     startReload() {
         if(this.reloading) return;
-        this.reloading = true; this.reloadTimer = 0; this.perfectReload = false;
+        this.reloading = true; this.reloadTimer = 0; this.perfectReload = false; this.chargeAmount = 0;
         audioSys.sfxReload();
     }
     attemptActiveReload(game) {
@@ -1037,17 +1301,32 @@ class Weapon {
     draw(ctx, px, py, angle) {
         ctx.save(); ctx.translate(px, py); ctx.rotate(angle);
         
+        if (this.reloading) {
+            let animProgress = this.reloadTimer / this.config.reloadTime;
+            if (animProgress > 0) ctx.rotate(animProgress * Math.PI * 2);
+        }
+
         if (Math.abs(angle) > Math.PI / 2) {
             ctx.scale(1, -1);
         }
         
         ctx.translate(10, 0);
-        ctx.fillStyle = '#dddddd';
-        if(this.config.type === 'pistol') ctx.fillRect(0, -3, 12, 6);
-        else if(this.config.type === 'shotgun') { ctx.fillRect(0, -5, 18, 4); ctx.fillRect(0, 1, 18, 4); }
-        else if(this.config.type === 'rifle' || this.config.type === 'laser') ctx.fillRect(0, -2, 25, 4);
-        else if(this.config.type === 'sniper') { ctx.fillRect(0, -2, 35, 4); ctx.fillRect(5, -4, 10, 8); }
-        else if(this.config.type === 'grenade') { ctx.fillRect(0, -4, 20, 8); ctx.fillRect(20, -6, 5, 12); }
+
+        if (this.chargeAmount > 0) {
+            ctx.beginPath();
+            ctx.arc(10, 0, 10 + (this.chargeAmount / this.config.maxCharge) * 15, 0, Math.PI * 2);
+            ctx.fillStyle = `rgba(0, 255, 255, ${this.chargeAmount / this.config.maxCharge * 0.5})`;
+            ctx.fill();
+        }
+
+        let sprite = window.renderedSprites[this.config.id];
+        if(sprite) {
+            ctx.drawImage(sprite, -8, -12, 32, 16);
+        } else {
+            ctx.fillStyle = '#dddddd';
+            ctx.fillRect(0, -2, 25, 4);
+        }
+
         ctx.restore();
     }
 }
@@ -1185,11 +1464,24 @@ class Player {
         if (game.input.keys['KeyR'] && !game.prevKeys['KeyR']) this.weapon.attemptActiveReload(game);
         else if (game.input.keys['KeyR'] && !this.weapon.reloading && this.weapon.ammo < this.weapon.config.magSize) this.weapon.startReload();
 
-        if (game.input.mouse.down || (this.weapon.config.auto && game.input.mouse.down)) {
-            let fireX = this.x + Math.cos(this.angle)*6 - Math.sin(this.angle)*8;
-            let fireY = this.y + Math.sin(this.angle)*6 + Math.cos(this.angle)*8;
-            this.weapon.fire(fireX, fireY, targetX, targetY, game, game.time);
-            if(!this.weapon.config.auto) game.input.mouse.down = false;
+        let isMouseDown = game.input.mouse.down;
+        let isAuto = this.weapon.config.auto;
+        let isChargeable = this.weapon.config.chargeable;
+        let fireX = this.x + Math.cos(this.angle)*6 - Math.sin(this.angle)*8;
+        let fireY = this.y + Math.sin(this.angle)*6 + Math.cos(this.angle)*8;
+
+        if (isChargeable) {
+            if (isMouseDown) {
+                this.weapon.charge(dt);
+            } else if (!isMouseDown && game.prevMouseDown && this.weapon.chargeAmount > 0) {
+                this.weapon.fire(fireX, fireY, targetX, targetY, game, game.time, false, this.weapon.chargeAmount);
+                this.weapon.chargeAmount = 0;
+            }
+        } else {
+            if (isMouseDown || (isAuto && isMouseDown)) {
+                let fired = this.weapon.fire(fireX, fireY, targetX, targetY, game, game.time);
+                if (!isAuto && fired) game.input.mouse.down = false; 
+            }
         }
     }
     checkPropCollision(x, y, props) {
@@ -1504,6 +1796,7 @@ class Game {
         this.canvas = document.getElementById('gameCanvas'); 
         this.ctx = this.canvas.getContext('2d');
         this.input = { keys: {}, mouse: { x: 0, y: 0, down: false } }; this.prevKeys = {};
+        this.prevMouseDown = false;
         window.gameInstance = this;
         
         window.addEventListener('keydown', e => { 
@@ -1756,7 +2049,10 @@ class Game {
                 div.onclick = () => this.buySelectedStoreItem(k);
             }
 
-            let html = `<h4>${w.name}</h4><p>Daño: ${w.damage} | Mun: ${w.magSize}</p>`;
+            let spriteDataUrl = window.renderedSprites[w.id] ? window.renderedSprites[w.id].toDataURL() : '';
+            let imgHtml = spriteDataUrl ? `<img src="${spriteDataUrl}" class="weapon-sprite-ui">` : '';
+
+            let html = `<h4><span>${w.name}</span> ${imgHtml}</h4><p>Daño: ${w.damage} | Mun: ${w.magSize}</p>`;
             if (isUnlocked) { html += `<p style="color:var(--accent-color)">DESBLOQUEADA</p>`; } 
             else { html += `<p class="price">Costo: ${w.cost} Cr</p>`; }
             
@@ -2018,6 +2314,7 @@ class Game {
         for (let i = this.customParticles.length - 1; i >= 0; i--) { this.customParticles[i].life -= dt; if(this.customParticles[i].life <= 0) this.customParticles.splice(i, 1); }
         for (let i = this.dmgTexts.length - 1; i >= 0; i--) { this.dmgTexts[i].update(dt); if (!this.dmgTexts[i].active) { this.pools.dmgText.release(this.dmgTexts[i]); this.dmgTexts.splice(i, 1); } }
         
+        this.prevMouseDown = this.input.mouse.down;
         for(let k in this.input.keys) this.prevKeys[k] = this.input.keys[k];
     }
 
