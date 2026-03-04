@@ -180,6 +180,7 @@
                 <div id="pauseScreen" class="screen">
                     <h2>PAUSADO</h2>
                     <button id="btnResume" class="nav-item">Continuar</button>
+                    <button id="btnPauseSettings" class="nav-item">Ajustes</button>
                     <button id="btnQuit" class="nav-item danger">Abandonar</button>
                     <div id="pauseMutationsList"></div>
                 </div>
@@ -1874,7 +1875,6 @@ class Game {
                 else if(this.state === 'PLAYING' || this.state === 'PAUSED') this.togglePause(); 
             }
             if(e.code === 'KeyE') { if (this.state === 'PLAYING' && this.nearStash && this.mode === 'SURVIVAL') this.openStash(); }
-            if(e.code === 'KeyM') this.toggleSound();
             if(e.code === 'Enter') this.triggerNavEnter();
             
             if(this.state !== 'PLAYING') {
@@ -2064,11 +2064,17 @@ class Game {
         };
         
         document.getElementById('btnSoundMenu').onclick = () => { this.setUIState('soundSettingsScreen'); this.state = 'SETTINGS'; };
-        document.getElementById('btnSoundBack').onclick = () => { this.updateMenuUI(); this.setUIState('menuScreen'); this.state = 'MENU'; };
+        document.getElementById('btnSoundBack').onclick = () => { 
+            if (this.player && this.player.active && this.state === 'SETTINGS') {
+                this.setUIState('pauseScreen'); this.state = 'PAUSED';
+            } else {
+                this.updateMenuUI(); this.setUIState('menuScreen'); this.state = 'MENU'; 
+            }
+        };
         document.getElementById('bgmVolSlider').oninput = (e) => { globalBgmVol = e.target.value / 100; audioSys.updateBGMVol(); };
         document.getElementById('sfxVolSlider').oninput = (e) => { globalSfxVol = e.target.value / 100; };
         
-        document.getElementById('btnPauseSound').onclick = () => this.toggleSound();
+        document.getElementById('btnPauseSettings').onclick = () => { this.setUIState('soundSettingsScreen'); this.state = 'SETTINGS'; };
         document.getElementById('btnResume').onclick = () => this.togglePause();
         document.getElementById('btnQuit').onclick = () => { this.endRun(false); audioSys.startBGM('menu'); };
         document.getElementById('btnReviveAd').onclick = () => {
@@ -2138,8 +2144,6 @@ class Game {
         if (u.mission.progress >= u.mission.target) claimBtn.style.display = 'inline-block'; else claimBtn.style.display = 'none';
     }
 
-    toggleSound() { soundEnabled = !soundEnabled; document.getElementById('soundStatus').innerText = soundEnabled?'ON':'OFF'; document.getElementById('pauseSoundStatus').innerText = soundEnabled?'ON':'OFF'; if(soundEnabled) { audioSys.init(); if(this.state === 'MENU') audioSys.startBGM('menu'); } else audioSys.stopBGM(); }
-    
     setUIState(screenId) { 
         document.querySelectorAll('.screen').forEach(el => el.classList.remove('active')); 
         if (screenId) document.getElementById(screenId).classList.add('active'); 
