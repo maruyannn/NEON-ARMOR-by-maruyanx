@@ -239,106 +239,58 @@ const CANVAS_WIDTH = 1024, CANVAS_HEIGHT = 768, TILE_SIZE = 64;
 
 const SPRITE_DATA = {
     player_tank: [
-        "                                ",
-        "                                ",
-        "            00000000            ",
-        "          00cccccccc00          ",
-        "         0cccccccccccc0         ",
-        "        0cccccccccccccc0        ",
-        "       0cccccccccccccccc0       ",
-        "       0cccccccccccccccc0       ",
-        "      0cc00000000000000cc0      ",
-        "      0c0dddddddddddddd0c0      ",
-        "      0c0dddddddddddddd0c0      ",
-        "      0c0dddddddddddddd0c0      ",
-        "      0c0dddddddddddddd0c0      ",
-        "      0c0dddddddddddddd0c0      ",
-        "      0c0dddddddddddddd0c0      ",
-        "      0cc00000000000000cc0      ",
-        "      0cccccccccccccccc0c0      ",
-        "      0cccccccccccccccc0c0      ",
-        "       0cccccccccccccc000       ",
-        "        0cccccccccccc0          ",
-        "        000cccc00cccc00         ",
-        "          0cccc00cccc0          ",
-        "          0cccc00cccc0          ",
-        "          00000  00000          ",
-        "                                ",
-        "                                ",
-        "                                ",
-        "                                ",
-        "                                ",
-        "                                ",
-        "                                ",
-        "                                "
+        "      0000      ",
+        "    00cccc00    ",
+        "   0cccccccc0   ",
+        "  0cccccccccc0  ",
+        "  0cccccccccc0  ",
+        " 0cc00000000cc0 ",
+        " 0c0dddddddd0c0 ",
+        " 0c0dddddddd0c0 ",
+        " 0c0dddddddd0c0 ",
+        " 0cc00000000cc0 ",
+        " 0cccccccccccc0 ",
+        "  0cccccccccc0  ",
+        "  00ccc00ccc00  ",
+        "   0ccc00ccc0   ",
+        "   0000  0000   ",
+        "                "
     ],
     player_tank_walk: [
-        "                                ",
-        "                                ",
-        "            00000000            ",
-        "          00cccccccc00          ",
-        "         0cccccccccccc0         ",
-        "        0cccccccccccccc0        ",
-        "       0cccccccccccccccc0       ",
-        "       0cccccccccccccccc0       ",
-        "      0cc00000000000000cc0      ",
-        "      0c0dddddddddddddd0c0      ",
-        "      0c0dddddddddddddd0c0      ",
-        "      0c0dddddddddddddd0c0      ",
-        "      0c0dddddddddddddd0c0      ",
-        "      0c0dddddddddddddd0c0      ",
-        "      0c0dddddddddddddd0c0      ",
-        "      0cc00000000000000cc0      ",
-        "      0cccccccccccccccc0c0      ",
-        "      0cccccccccccccccc0c0      ",
-        "       0cccccccccccccc000       ",
-        "        0cccccccccccc0          ",
-        "         00cccc00cccc00         ",
-        "          00000 0cccc0          ",
-        "                0cccc0          ",
-        "                00000           ",
-        "                                ",
-        "                                ",
-        "                                ",
-        "                                ",
-        "                                ",
-        "                                ",
-        "                                ",
-        "                                "
+        "      0000      ",
+        "    00cccc00    ",
+        "   0cccccccc0   ",
+        "  0cccccccccc0  ",
+        "  0cccccccccc0  ",
+        " 0cc00000000cc0 ",
+        " 0c0dddddddd0c0 ",
+        " 0c0dddddddd0c0 ",
+        " 0c0dddddddd0c0 ",
+        " 0cc00000000cc0 ",
+        " 0cccccccccccc0 ",
+        "  0cccccccccc0  ",
+        "   0ccc00ccc00  ",
+        "   0000 0ccc0   ",
+        "         0000   ",
+        "                "
     ],
     player_tank_dead: [
-        "                                ",
-        "                                ",
-        "                                ",
-        "                                ",
-        "                                ",
-        "                                ",
-        "                                ",
-        "                                ",
-        "              000000            ",
-        "            00cccccc00          ",
-        "           0c0ccddddcc0         ",
-        "          0cc0ccccddddc0        ",
-        "          0cc0cccccccccc0       ",
-        "           0c0cccccccc00        ",
-        "            00cccccccc0         ",
-        "             0cccccccc0         ",
-        "            0ccc000ccc0         ",
-        "           00000   00000        ",
-        "                                ",
-        "                                ",
-        "                                ",
-        "                                ",
-        "                                ",
-        "                                ",
-        "                                ",
-        "                                ",
-        "                                ",
-        "                                ",
-        "                                ",
-        "                                ",
-        "                                ",
-        "                                "
+        "                ",
+        "                ",
+        "                ",
+        "                ",
+        "                ",
+        "       000      ",
+        "     00ccc00    ",
+        "    0c0cdddc0   ",
+        "   0cc0ccdddc0  ",
+        "   0cc0cccccc0  ",
+        "    0c0cccc00   ",
+        "     00cccc0    ",
+        "      0cccc0    ",
+        "     0cc00cc0   ",
+        "    0000  0000  ",
+        "                "
     ],
     player_assassin: [
         "      0000      ",
@@ -449,38 +401,22 @@ const SPRITE_DATA = {
         "                "
     ],
     enemy_basic: [
-        "                                ",
-        "                                ",
-        "            00000000            ",
-        "          005555555500          ",
-        "         05555555555550         ",
-        "        0550055555500550        ",
-        "        0550055555500550        ",
-        "       055000055550000550       ",
-        "       055000055550000550       ",
-        "       055555555555555550       ",
-        "       055555555555555550       ",
-        "        0555500000055550        ",
-        "        0555500000055550        ",
-        "        0005555555555000        ",
-        "       055555555555555550       ",
-        "       055555555555555550       ",
-        "       055555555555555550       ",
-        "       055555555555555550       ",
-        "       000555500005555000       ",
-        "       000555500005555000       ",
-        "        0555500000055550        ",
-        "        0555500000055550        ",
-        "        00000  00  00000        ",
-        "        00000  00  00000        ",
-        "                                ",
-        "                                ",
-        "                                ",
-        "                                ",
-        "                                ",
-        "                                ",
-        "                                ",
-        "                                "
+        "                ",
+        "      0000      ",
+        "     055550     ",
+        "    05555550    ",
+        "   0505555050   ",
+        "   0500550050   ",
+        "   0555555550   ",
+        "    05500550    ",
+        "    00555500    ",
+        "   0555555550   ",
+        "   0555555550   ",
+        "   0055005500   ",
+        "    05500550    ",
+        "    000  000    ",
+        "                ",
+        "                "
     ],
     enemy_basic_dead: [
         "                ",
@@ -661,6 +597,42 @@ const SPRITE_DATA = {
         "   000    000   ",
         "                ",
         "                "
+    ],
+    enemy_acid: [
+        "      0000      ",
+        "     077770     ",
+        "    07777770    ",
+        "   0707777070   ",
+        "   0700770070   ",
+        "   0777777770   ",
+        "    07777770    ",
+        "    00777700    ",
+        "   0777777770   ",
+        "   0777777770   ",
+        "   0077007700   ",
+        "    07700770    ",
+        "    000  000    ",
+        "                ",
+        "                ",
+        "                "
+    ],
+    enemy_acid_dead: [
+        "                ",
+        "                ",
+        "                ",
+        "                ",
+        "                ",
+        "                ",
+        "                ",
+        "                ",
+        "                ",
+        "                ",
+        "      0000      ",
+        "    00777700    ",
+        "   0770770770   ",
+        "  077777777770  ",
+        "  007700007700  ",
+        "   000    000   "
     ],
     enemy_boss: [
         "  00        00  ",
@@ -1047,19 +1019,25 @@ window.renderedSprites = {};
 function initSprites() {
     for(let key in SPRITE_DATA) {
         let data = SPRITE_DATA[key];
+        let upscaled = [];
+        let targetSize = 64;
+        let currentHeight = data.length;
+        let currentWidth = data[0].length;
         
-        if (data.length === 16 && data[0].length === 16) {
-            let upscaled = [];
-            for (let y = 0; y < 16; y++) {
-                let row = "";
-                for (let x = 0; x < 16; x++) {
-                    row += data[y][x] + data[y][x];
+        if (currentHeight <= targetSize && currentWidth <= targetSize) {
+            let scaleY = Math.floor(targetSize / currentHeight);
+            let scaleX = Math.floor(targetSize / currentWidth);
+            if(scaleX > 1 || scaleY > 1) {
+                for (let y = 0; y < currentHeight; y++) {
+                    let row = "";
+                    for (let x = 0; x < currentWidth; x++) {
+                        for(let i=0; i<scaleX; i++) row += data[y][x];
+                    }
+                    for(let i=0; i<scaleY; i++) upscaled.push(row);
                 }
-                upscaled.push(row);
-                upscaled.push(row);
+                data = upscaled;
+                SPRITE_DATA[key] = upscaled;
             }
-            data = upscaled;
-            SPRITE_DATA[key] = upscaled;
         }
 
         let canvas = document.createElement('canvas');
@@ -1704,17 +1682,35 @@ class Player {
     draw(ctx, time) {
         ctx.save(); ctx.translate(this.x, this.y);
         let baseName = 'player_' + this.pClass.id;
+        
+        let walkCycle = (time / 150);
+        let facingLeft = Math.cos(this.angle) < 0;
+
         if (!this.active) {
             let sprite = window.renderedSprites[baseName + '_dead'];
             if(sprite) ctx.drawImage(sprite, -this.radius*1.5, -this.radius*1.5, this.radius*3, this.radius*3);
         } else {
-            let facingLeft = Math.cos(this.angle) < 0;
+            let f1 = this.isMoving ? Math.sin(walkCycle)*6 : 0;
+            let f2 = this.isMoving ? Math.cos(walkCycle)*6 : 0;
+            ctx.fillStyle = '#111';
+            ctx.beginPath(); ctx.arc(-6 + (facingLeft ? f1 : f2), this.radius - 2, 4, 0, Math.PI*2); ctx.fill();
+            ctx.beginPath(); ctx.arc(6 + (facingLeft ? f2 : f1), this.radius - 2, 4, 0, Math.PI*2); ctx.fill();
+
             ctx.save(); ctx.scale(facingLeft ? -1 : 1, 1);
             if (this.invulnerableTimer > 0 && Math.floor(this.invulnerableTimer * 20) % 2 === 0) ctx.globalAlpha = 0.5;
             let sprite = window.renderedSprites[baseName];
             if (this.isMoving && Math.floor(time / 150) % 2 === 0) sprite = window.renderedSprites[baseName + '_walk'];
             if(sprite) ctx.drawImage(sprite, -this.radius*1.5, -this.radius*1.5, this.radius*3, this.radius*3);
             ctx.restore();
+
+            let h1 = this.isMoving ? Math.sin(walkCycle)*3 : 0;
+            ctx.save(); ctx.rotate(this.angle);
+            if (Math.abs(this.angle) > Math.PI / 2) ctx.scale(1, -1);
+            ctx.fillStyle = '#00ffcc';
+            ctx.beginPath(); ctx.arc(10, 6 + h1, 3, 0, Math.PI*2); ctx.fill();
+            ctx.beginPath(); ctx.arc(18, -2 + h1, 3, 0, Math.PI*2); ctx.fill();
+            ctx.restore();
+
             this.weapon.draw(ctx, 0, 0, this.angle);
         }
         ctx.restore();
@@ -1876,7 +1872,16 @@ class Enemy {
         }
     }
     draw(ctx, time, game) {
-        ctx.save(); ctx.translate(this.x, this.y); ctx.scale(this.facingLeft ? -1 : 1, 1);
+        ctx.save(); ctx.translate(this.x, this.y); 
+        
+        let walkCycle = (time / 150);
+        let f1 = this.isMoving ? Math.sin(walkCycle)*4 : 0;
+        let f2 = this.isMoving ? Math.cos(walkCycle)*4 : 0;
+        ctx.fillStyle = '#222';
+        ctx.beginPath(); ctx.arc(-6 + (this.facingLeft ? f1 : f2), this.radius - 2, 4, 0, Math.PI*2); ctx.fill();
+        ctx.beginPath(); ctx.arc(6 + (this.facingLeft ? f2 : f1), this.radius - 2, 4, 0, Math.PI*2); ctx.fill();
+
+        ctx.scale(this.facingLeft ? -1 : 1, 1);
         if (this.flashTimer > 0) ctx.globalAlpha = 0.5;
         if (this.type === 'ghost') {
             let d = distance(this.x, this.y, game.player.x, game.player.y);
@@ -1887,6 +1892,12 @@ class Enemy {
         let sc = this.type === 'boss' ? this.radius*3 : this.radius*2.5;
         if (this.isMoving) ctx.translate(0, -Math.abs(Math.sin(time / 100)) * 4);
         if(window.renderedSprites[spriteName]) ctx.drawImage(window.renderedSprites[spriteName], -sc/2, -sc/2, sc, sc);
+        
+        let h1 = this.isMoving ? Math.sin(walkCycle)*3 : 0;
+        ctx.fillStyle = '#555';
+        ctx.beginPath(); ctx.arc(-this.radius + 4, 2 + h1, 3, 0, Math.PI*2); ctx.fill();
+        ctx.beginPath(); ctx.arc(this.radius - 4, 2 - h1, 3, 0, Math.PI*2); ctx.fill();
+
         ctx.restore();
         if(this.eType === 'shielded') {
             ctx.strokeStyle = '#0088ff'; ctx.lineWidth = 4; ctx.beginPath();
